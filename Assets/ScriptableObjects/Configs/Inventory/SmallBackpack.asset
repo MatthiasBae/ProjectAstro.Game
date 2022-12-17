@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Small Backpack
   MaxWeight: 25
-  SlotsY: 3
-  SlotsX: 2
+  SlotsY: 6
+  SlotsX: 3

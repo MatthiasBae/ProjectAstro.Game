@@ -1,45 +1,62 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 public class InventoryUI : MonoBehaviour {
-    public InventoryInfoUI InventoryInfoUI;
-    public InventorySlotsUI InventorySlotsUI;
-    public InventoryItemsUI InventoryItemsUI;
-    public void Initialize(InventoryConfig inventoryConfig) {
-        this.CreateUI(inventoryConfig);
-        this.SetNameText(inventoryConfig.Name);
-        this.SetWeightText(inventoryConfig.MaxWeight, 0);
-    }
 
-    private void CreateUI(InventoryConfig inventoryConfig) {
-        this.ResetUI();
-        this.CreateSlots(inventoryConfig);
-        
-    }
-    public void ResetUI() {
-        this.InventoryInfoUI.ResetInfo();
-        this.InventorySlotsUI.ResetSlots();
-    }
+    [SerializeField]
+    private Inventory Inventory;
 
-    public void SwitchInventory(Inventory inventory) {
-        this.CreateUI(inventory.Config);
-        this.SetNameText(inventory.Config.Name);
-        this.SetWeightText(inventory.Config.MaxWeight, 0);
-    }
+    [SerializeField]
+    private InventoryGridUI GridUI;
+
+    [SerializeField]
+    private InventoryHeaderUI HeaderUI;
+
+    [SerializeField]
+    private RectTransform RectTransform;
     
-    private void CreateSlots(InventoryConfig inventoryConfig) {
-        this.InventorySlotsUI.CreateSlots(inventoryConfig);
+    private void Start() {
+        this.UpdateUI();
     }
-    private void CreateItems(Inventory inventory) {
-        //this.InventoryItemsUI.CreateItems(inventory);
+
+    public void ExchangeInventory(ref Inventory inventory) {
+        var currentInventory = this.Inventory;
+        
+        
+
+        this.Inventory = inventory;
+        this.UpdateUI();
     }
-    public void SetNameText(string name) {
-        this.InventoryInfoUI.SetNameText(name);
+
+    public void UpdateUI() {
+        if(this.Inventory.Config == null || this.Inventory == null) {
+            Debug.LogError("Inventory or InventoryConfig is null");
+            return;
+        }
+        
+        this.HeaderUI.SetName(this.Inventory.Config.Name);
+        this.HeaderUI.SetWeight(this.Inventory.Weight, this.Inventory.Config.MaxWeight);
+        
+        this.GridUI.ClearSlots();
+        this.GridUI.InitializeSlots(this.Inventory);
+
+        this.GridUI.ClearItems();
+        this.GridUI.AddItems(this.Inventory);
+
     }
-    public void SetWeightText(float maxWeight, float actualWeight) {
-        this.InventoryInfoUI.SetWeightText(maxWeight, actualWeight);
+
+    public void UpdateGridSlotsUI() {
+        this.GridUI.ClearSlots();
+        this.GridUI.InitializeSlots(this.Inventory);
+    }
+
+    public void UpdateGridItemsUI() {
+        foreach(var item in this.Inventory.ItemPositions) {
+            var coordinates = item.Value;
+            var inventoryItem = item.Key;
+            
+            this.GridUI.AddItem(inventoryItem, coordinates);
+        }
     }
 }

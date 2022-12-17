@@ -4,5 +4,5 @@ using UnityEngine;
 
 public class UIController : MonoBehaviour {
     public Actor Player;
-    public InventoryUIController InventoryUIController;
+    //public InventoryUIController InventoryUIController;
 }
