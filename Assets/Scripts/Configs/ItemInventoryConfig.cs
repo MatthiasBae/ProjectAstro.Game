@@ -5,8 +5,7 @@ using UnityEngine;
 
 [Serializable]
 public class ItemInventoryConfig {
-    public int SlotsX;
-    public int SlotsY;
+    public Vector2 Size;
     public int MaxStackSize;
     public float Weight;
     public bool IsStackable {

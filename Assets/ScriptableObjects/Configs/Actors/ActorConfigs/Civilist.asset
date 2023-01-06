@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Civilist
   m_EditorClassIdentifier: 
   Name: Civilist
-  WalkSpeed: 1
+  WalkSpeed: 2
   RunSpeed: 2.5
   TypeConfig: {fileID: 11400000, guid: 63b23362ded781945835b49c6415046d, type: 2}

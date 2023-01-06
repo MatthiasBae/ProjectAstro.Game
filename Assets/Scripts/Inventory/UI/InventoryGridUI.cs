@@ -7,7 +7,9 @@ using UnityEngine.UI;
 public class InventoryGridUI : MonoBehaviour {
 
     [SerializeField]
-    private RectTransform GridRectTransform;
+    private RectTransform GridContainerRectTransform;
+    [SerializeField]
+    private RectTransform SlotContainerRectTransform;
     [SerializeField]
     private RectTransform ItemContainerRectTransform;
 
@@ -28,10 +30,18 @@ public class InventoryGridUI : MonoBehaviour {
     private Color ItemNotPlaceable;
     [SerializeField]
     private Color ItemPlaceable;
-
-    private Dictionary<Vector2, InventoryGridSlotUI> Slots = new Dictionary<Vector2, InventoryGridSlotUI>();
-    private Dictionary<InventoryGridItemUI, List<Vector2>> Items = new Dictionary<InventoryGridItemUI, List<Vector2>>();
     
+    [SerializeField]
+    private List<InventorySlotUI> Slots;
+
+    [SerializeField]
+    private List<InventoryItemUI> Items;
+    
+    private void Awake() {
+        this.Slots = new List<InventorySlotUI>();
+        this.Items = new List<InventoryItemUI>();
+    }
+
     public void InitializeSlots(Inventory inventory) {
         this.AddSlots(inventory.Config);
         this.UpdateSize(inventory.Config);
@@ -39,25 +49,27 @@ public class InventoryGridUI : MonoBehaviour {
     }
 
     public void AddSlots(InventoryConfig inventoryConfig) {
-        for(int x = 0; x < inventoryConfig.SlotsX; x++) {
-            for(int y = 0; y < inventoryConfig.SlotsY; y++) {
+        for(int x = 0; x < inventoryConfig.Size.x; x++) {
+            for(int y = 0; y < inventoryConfig.Size.y; y++) {
                 GameObject slot = this.CreateSlot();
-                InventoryGridSlotUI slotUI = slot.GetComponent<InventoryGridSlotUI>();
-                this.Slots.Add(new Vector2(x, y), slotUI);
+                InventorySlotUI slotUI = slot.GetComponent<InventorySlotUI>();
+                this.Slots.Add(slotUI);
             }
         }
     }
 
     public void UpdateSize(InventoryConfig inventoryConfig) {
         var cellSize = this.GridLayout.cellSize;
-        var size = new Vector2(inventoryConfig.SlotsX * cellSize.x, inventoryConfig.SlotsY * cellSize.y);
-        this.GridRectTransform.sizeDelta = size;
-        this.ItemContainerRectTransform.sizeDelta = size;
+        var gridSize = new Vector2(inventoryConfig.Size.x * cellSize.x, inventoryConfig.Size.y * cellSize.y);
+        var gridContainerSize = new Vector2(gridSize.x, gridSize.y + (40*2));
+        this.SlotContainerRectTransform.sizeDelta = gridSize;
+        this.ItemContainerRectTransform.sizeDelta = gridSize;
+        this.GridContainerRectTransform.sizeDelta = gridContainerSize;
     }
 
     public void UpdatePosition() {
-        var pos = new Vector2(this.GridRectTransform.sizeDelta.x / 2, -(this.GridRectTransform.sizeDelta.y / 2));
-        this.GridRectTransform.anchoredPosition = pos;
+        var pos = new Vector2(this.SlotContainerRectTransform.sizeDelta.x / 2, -(this.SlotContainerRectTransform.sizeDelta.y / 2));
+        this.SlotContainerRectTransform.anchoredPosition = pos;
         this.ItemContainerRectTransform.anchoredPosition = pos;
     }
 
@@ -67,40 +79,53 @@ public class InventoryGridUI : MonoBehaviour {
     }
 
     public void ClearSlots() {
-        foreach(var slot in this.Slots.Values) {
+        foreach(var slot in this.Slots) {
             Destroy(slot.gameObject);
         }
         this.Slots.Clear();
     }
+    
+    public void AddItem(InventoryItem inventoryItem, Vector2 position) {
+        InventoryItemUI itemUI = this.CreateItem(inventoryItem);
+        var cellSize = this.GridLayout.cellSize;
+        itemUI.UpdateUI();
+        itemUI.SetSize(cellSize * inventoryItem.Item.Config.Inventory.Size);
 
+        var transformPos = new Vector2(position.x * cellSize.x, -position.y * cellSize.y);
+        itemUI.SetPosition(transformPos); 
+        this.Items.Add(itemUI);
+    }
     public void AddItems(Inventory inventory) {
-        foreach(var inventoryItem in inventory.ItemPositions) {
-            if(inventoryItem.Value != null) {
-                this.AddItem(inventoryItem.Key, inventoryItem.Value);
+        foreach(var slot in inventory.Slots) {
+            if(slot.InventoryItem == null) {
+                continue;
             }
+
+            this.AddItem(slot.InventoryItem, slot.Position);
         }
     }
-
-    public void AddItem(InventoryItem inventoryItem, List<Vector2> coordinates) {
-        InventoryGridItemUI itemUI = this.CreateItem(inventoryItem);
-        this.Items.Add(itemUI, coordinates);
+    
+    public void RemoveItem(InventoryItem inventoryItem) {
+        var inventoryItemUI = this.Items.FirstOrDefault(item => item.InventoryItem == inventoryItem);
+        this.Items.Remove(inventoryItemUI);
+        Destroy(inventoryItemUI.gameObject);
     }
 
-    private InventoryGridItemUI CreateItem(InventoryItem inventoryItem) {
+    private InventoryItemUI CreateItem(InventoryItem inventoryItem) {
         GameObject item = Instantiate(this.InventoryGridItemPrefab, this.ItemContainer.transform);
-        InventoryGridItemUI itemUI = item.GetComponent<InventoryGridItemUI>();
+        InventoryItemUI itemUI = item.GetComponent<InventoryItemUI>();
         itemUI.InventoryItem = inventoryItem;
         return itemUI;
     }
 
     public void ClearItems() {
-        foreach(var item in this.Items.Keys) {
+        foreach(var item in this.Items) {
             Destroy(item.gameObject);
         }
         this.Items.Clear();
     }
 
-    public void ClearItem(InventoryGridItemUI itemUI) {
+    public void ClearItem(InventoryItemUI itemUI) {
         Destroy(itemUI.gameObject);
         this.Items.Remove(itemUI);
     }

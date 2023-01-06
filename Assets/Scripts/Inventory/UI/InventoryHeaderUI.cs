@@ -13,7 +13,12 @@ public class InventoryHeaderUI : MonoBehaviour {
     
 
     public void SetWeight(float weight, float maxWeight) {
-        this.Weight.text = $"Weight: {weight}Kg / {maxWeight}Kg";
+        var text = $"Weight: {weight}Kg / {maxWeight}Kg";
+        if(maxWeight == 0) {
+            text = "";
+        }
+        
+        this.Weight.text = text;
     }
 
     public void SetName(string name) {

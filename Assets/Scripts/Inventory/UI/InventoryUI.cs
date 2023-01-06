@@ -16,18 +16,21 @@ public class InventoryUI : MonoBehaviour {
     [SerializeField]
     private RectTransform RectTransform;
     
-    private void Start() {
+    private void Awake() {
+        this.RegisterEvents();
         this.UpdateUI();
     }
 
-    public void ExchangeInventory(ref Inventory inventory) {
-        var currentInventory = this.Inventory;
-        
-        
-
-        this.Inventory = inventory;
-        this.UpdateUI();
+    private void RegisterEvents() {
+        this.Inventory.ItemAdded += (inventorySlot) => {
+            this.GridUI.AddItem(inventorySlot.InventoryItem, inventorySlot.Position);
+        };
+        this.Inventory.ItemRemoved += (inventoryItem) => {
+            //@TODO: Gewicht updaten
+            this.GridUI.RemoveItem(inventoryItem);
+        };
     }
+    
 
     public void UpdateUI() {
         if(this.Inventory.Config == null || this.Inventory == null) {
@@ -44,19 +47,12 @@ public class InventoryUI : MonoBehaviour {
         this.GridUI.ClearItems();
         this.GridUI.AddItems(this.Inventory);
 
+        var height = this.Inventory.Config.Size.y * 40 + 120;
+        this.UpdateSize(new Vector2(400, height));
     }
 
-    public void UpdateGridSlotsUI() {
-        this.GridUI.ClearSlots();
-        this.GridUI.InitializeSlots(this.Inventory);
-    }
-
-    public void UpdateGridItemsUI() {
-        foreach(var item in this.Inventory.ItemPositions) {
-            var coordinates = item.Value;
-            var inventoryItem = item.Key;
-            
-            this.GridUI.AddItem(inventoryItem, coordinates);
-        }
+    private void UpdateSize(Vector2 size) {
+        this.RectTransform.sizeDelta = size;
+        
     }
 }

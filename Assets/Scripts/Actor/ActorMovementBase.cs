@@ -8,13 +8,14 @@ public abstract class ActorMovementBase {
     private Rigidbody2D ActorRigidbody;
     private Animator ActorAnimator;
     private ActorConfig ActorConfig;
-    private InputControllerBase InputController;
+    public InputControllerBase InputController;
 
     private Dictionary<int, float> StateSpeeds;
     private float CurrentSpeed;
     
     private Vector2 PreviousMoveDirection;
     private Vector2 PreviousLookDirection;
+    private Vector2 PreviousDirection;
     private bool PreviousAim;
     private int PreviousState;
 
@@ -23,35 +24,42 @@ public abstract class ActorMovementBase {
         this.ActorRigidbody = actor.Rigidbody;
         this.ActorAnimator = actor.Animator;
         this.ActorConfig = actor.Config;
-        this.InputController = actor.InputController;
 
         this.PopulateSpeed();
     }
 
     private void PopulateSpeed() {
-        this.StateSpeeds = new Dictionary<int, float>();
-        this.StateSpeeds.Add(0, 0f);
-        this.StateSpeeds.Add(1, this.ActorConfig.WalkSpeed);
-        this.StateSpeeds.Add(2, this.ActorConfig.RunSpeed);
+        this.StateSpeeds = new Dictionary<int, float>() {
+            {0, 0f},
+            {1, this.ActorConfig.WalkSpeed},
+            {2, this.ActorConfig.RunSpeed}
+        };
     }
 
     public void Update() {
         this.UpdateState();
         this.UpdateAim();
         this.UpdateDirection();
+        this.UpdateMovement();
     }
 
     private void UpdateState() {
 
         var stateWalk = this.InputController.Walk;
         var stateRun = this.InputController.Run;
-        var movement = stateRun ? 2 : stateWalk ? 1 : 0;
 
-        if(movement != this.PreviousState) {
-            this.SetAnimatorParameterState(movement);
-            this.CurrentSpeed = this.StateSpeeds[movement];
-            this.PreviousState = movement;
+        var movement = 0;
+        if(stateWalk) {
+            movement = 1;
         }
+        if(stateRun) {
+            movement = 2;
+        }
+        
+        this.SetAnimatorParameterState(movement);
+        this.CurrentSpeed = this.StateSpeeds[movement];
+        this.PreviousState = movement;
+
     }
 
 
@@ -65,43 +73,52 @@ public abstract class ActorMovementBase {
     }
 
     private void UpdateDirection() {
-        var moveDirection = this.InputController.MoveDirection;
+        var moveDirection = Vector2Int.RoundToInt(this.InputController.MoveDirection);
         var lookDirection = Vector2Int.RoundToInt(this.InputController.LookDirection);
 
-        if(moveDirection != Vector2.zero && this.PreviousMoveDirection != moveDirection) {
+        if(moveDirection != Vector2.zero) {
             this.SetAnimatorParameterDirection(moveDirection);
             this.PreviousMoveDirection = moveDirection;
-        }
-        this.Move(moveDirection, this.CurrentSpeed);
-        
-        if(this.PreviousLookDirection != lookDirection && moveDirection == Vector2.zero) {
-            this.SetAnimatorParameterDirection(moveDirection);
-            this.PreviousLookDirection = lookDirection;
             return;
         }
+
+        if(lookDirection == this.PreviousLookDirection) {
+            return;
+        }
+        this.SetAnimatorParameterDirection(lookDirection);
+        this.PreviousLookDirection = lookDirection;
+    }
+
+    public void UpdateMovement() {
+        var movement = this.InputController.MoveDirection;
+        var speed = this.CurrentSpeed;
+        this.Move(movement, speed);
     }
 
     private void SetAnimatorParameterHandsEquipped(int handsEquipped) {
-        //this.ActorAnimator.SetInteger("HandsEquipped", handsEquipped);
+        this.ActorAnimator.SetInteger("HandsEquipped", handsEquipped);
     }
 
     private void SetAnimatorParameterState(int state) {
-        //this.ActorAnimator.SetInteger("State", state);
+        this.ActorAnimator.SetInteger("State", state);
     }
 
     private void SetAnimatorParameterAim(bool aim) {
-        //this.ActorAnimator.SetBool("Aim", aim);
+        this.ActorAnimator.SetBool("Aim", aim);
     }
 
     private void SetAnimatorParameterDirection(Vector2 direction) {
-        //this.ActorAnimator.SetFloat("XDirection", Mathf.Round(direction.x));
-        //this.ActorAnimator.SetFloat("YDirection", Mathf.Round(direction.y));
+        this.ActorAnimator.SetFloat("XDirection", Mathf.Round(direction.x));
+        this.ActorAnimator.SetFloat("YDirection", Mathf.Round(direction.y));
     }
 
     public virtual void Move(Vector2 direction, float speed) {
-        //this.Actor.transform.position += (Vector3)direction * (speed * Time.deltaTime);
+        if(direction == Vector2.zero) {
+            return;
+        }
+        this.Actor.transform.position += (Vector3)direction * speed * Time.deltaTime;
     }
     public virtual void AddForce(Vector2 direction, float strength) {
-        //this.ActorRigidbody.AddForce(direction * strength, ForceMode2D.Impulse);
+        this.ActorRigidbody.AddForce(direction * strength, ForceMode2D.Impulse);
     }
 }

@@ -6,6 +6,5 @@ using UnityEngine;
 public class InventoryConfig : ScriptableObject {
     public string Name;
     public int MaxWeight;
-    public int SlotsY;
-    public int SlotsX;
+    public Vector2 Size;
 }

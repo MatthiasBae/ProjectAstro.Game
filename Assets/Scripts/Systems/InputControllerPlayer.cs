@@ -7,7 +7,7 @@ public class InputControllerPlayer : InputControllerBase {
     public KeyBindings KeyBindings = new KeyBindings();
 
     public override Vector2 MoveDirection {
-        get => new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+        get => new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
     }
     public override Vector2 LookDirection {
         get => (Vector2)((Vector3)this.MouseWorldPosition - this.Actor.transform.position).normalized;

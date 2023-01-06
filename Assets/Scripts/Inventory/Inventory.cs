@@ -1,141 +1,152 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 
 public class Inventory : MonoBehaviour {
+
+    public float Weight;
     public InventoryConfig Config;
-    public Dictionary<Vector2, InventoryItem> ItemSlots;
-    public Dictionary<InventoryItem, List<Vector2>> ItemPositions {
-        get {
-            var itemPositions = new Dictionary<InventoryItem, List<Vector2>>();
-            foreach(var itemSlot in this.ItemSlots) {
-                if(itemSlot.Value == null) {
-                    continue;
-                }
-
-                if(itemPositions.ContainsKey(itemSlot.Value)) {
-                    itemPositions[itemSlot.Value].Add(itemSlot.Key);
-                }
-                else {
-                    itemPositions.Add(itemSlot.Value, new List<Vector2>() { itemSlot.Key });
-                }
-            }
-            return itemPositions;
-        }
-    }
+    public List<InventorySlot> Slots;
     
-    public event Action InventoryChanged;
-    public event Action<InventoryItem> ItemAdded;
+    public event Action<InventorySlot> ItemAdded;
     public event Action<InventoryItem> ItemRemoved;
-    
-    
-    public float Weight {
-        get {
-            float weight = 0;
-            if(this.ItemPositions == null){
-                return 0;
-            }
+
+    private InventorySlot GetSlot(Vector2 position) {
+        return this.Slots.FirstOrDefault(slot => slot.Position == position);
+    }
+
+    private void Awake() {
+        this.CreateSlots();
+    }
+
+    public void CreateSlots() {
+        this.Slots.Clear();
+        for(int y = 0; y < this.Config.Size.y; y++) {
+            for(int x = 0; x < this.Config.Size.x; x++) {
+                var slot = new InventorySlot() {
+                    Position = new Vector2(x, y),
+                    InventoryItem = null
+                };
             
-            foreach(var inventoryItem in this.ItemPositions.Keys) {
-                weight += (inventoryItem.Item.Config.Weight * inventoryItem.Quantity);
+                this.Slots.Add(slot);
             }
-            return weight;
         }
     }
-
     
+    public bool TryAddItem(Item item, int amount) {
+        var addedItem = false;
+        foreach(var slot in this.Slots) {
+            if(slot.InventoryItem != null) {
+                continue;
+            }
 
-    public Inventory(InventoryConfig config) {
-        this.Config = config;
-
-        this.CreateItemSlots();
+            var addedItemAt = this.TryAddItemAt(item, amount, slot.Position);
+            if(addedItemAt) {
+                addedItem = true;
+                break;
+            }
+        }
+        return addedItem;
     }
-
-
-    private InventoryItem MapTonventoryItem(Item item) {
-        return new InventoryItem() {
-            Item = item,
-            Quantity = 1
-        };
-    }
-
-    public void CreateItemSlots() {
-        this.ItemSlots = new Dictionary<Vector2, InventoryItem>();
+    
+    public bool TryAddItemAt(Item item, int amount, Vector2 position) {
+        var hasEnoughSlots = this.HasEnoughSlots(item);
+        if(!hasEnoughSlots) {
+            return false;
+        }
         
-        for(int x = 0; x < this.Config.SlotsX; x++) {
-            for(int y = 0; y < this.Config.SlotsY; y++) {
-                this.ItemSlots.Add(new Vector2(x, y), null);
-            }
-        }
-    }
-
-    public bool CanFitItemAt(Item item, Vector2 position) {
-        int slotsX = item.Config.Inventory.SlotsX / this.Config.SlotsX;
-        int slotsY = item.Config.Inventory.SlotsY / this.Config.SlotsY;
-
-        if(slotsX * slotsY != item.Config.Inventory.SlotsX * item.Config.Inventory.SlotsY) {
+        var slotArea = this.GetSlotArea(position, item.Config.Inventory.Size);
+        var isPlaceable = this.IsItemPlaceableAt(slotArea);
+        if(!isPlaceable) {
             return false;
         }
 
-        for(int x = 0; x < slotsX; x++) {
-            for(int y = 0; y < slotsY; y++) {
-                if(this.ItemSlots[new Vector2(position.x + x, position.y + y)] != null) {
-                    return false;
-                }
+        var endPosition = position + item.Config.Inventory.Size;
+        if(endPosition.x > this.Config.Size.x || endPosition.y > this.Config.Size.y) {
+            return false;
+        }
+
+        var inventoryItem = InventoryItem.Create(item, amount);
+
+        foreach(var slot in slotArea) {
+            slot.InventoryItem = inventoryItem;
+        }
+
+        var startSlot = this.GetSlot(position);
+
+        this.ItemAdded?.Invoke(startSlot);
+        return true;
+    }
+
+    public bool IsItemPlaceableAt(List<InventorySlot> inventorySlots) {
+        foreach(var slot in inventorySlots) {
+            if(slot.InventoryItem!= null) {
+                return false;
             }
         }
 
         return true;
     }
-    
-    public void GetFirstFittingSlot(Item item, out Vector2 position) {
-        position = new Vector2(-1, -1);
-        for(int x = 0; x < this.Config.SlotsX; x++) {
-            for(int y = 0; y < this.Config.SlotsY; y++) {
-                if(this.CanFitItemAt(item, new Vector2(x, y))) {
-                    position = new Vector2(x, y);
-                    return;
-                }
-            }
-        }
-    }
-    
-    public bool TryAddItem(Item item, Vector2 position) {
-        //@TODO: noch einbauen, dass wenn ein leerer Stack gefunden wird, dass der Stack dann gefüllt wird
-        if(!this.CanFitItemAt(item, position)) {
+
+    public bool HasEnoughSlots(Item item){
+        var itemSize = item.Config.Inventory.Size;
+        var inventorySize = this.Config.Size;
+
+        if(itemSize.x > inventorySize.x || itemSize.y > inventorySize.y) {
             return false;
         }
-        var inventoryItem = InventoryItem.Create(item, 1);
-        int slotsX = item.Config.Inventory.SlotsX / this.Config.SlotsX;
-        int slotsY = item.Config.Inventory.SlotsY / this.Config.SlotsY;
-
-        for(int x = 0; x < slotsX; x++) {
-            for(int y = 0; y < slotsY; y++) {
-                this.ItemSlots[new Vector2(position.x + x, position.y + y)] = inventoryItem;
-    }
-        }
-        this.InventoryChanged?.Invoke();
-        this.ItemAdded?.Invoke(inventoryItem);
         return true;
     }
 
-    public void RemoveItem(InventoryItem inventoryItem) {
-        bool foundItem = false;
 
-        for(int x = 0; x < this.Config.SlotsX; x++) {
-            for(int y = 0; y < this.Config.SlotsY; y++) {
-                if(this.ItemSlots[new Vector2(x, y)] == inventoryItem) {
-                    this.ItemSlots[new Vector2(x, y)] = null;
-                    foundItem = true;
-                }
+    public InventoryItem GetInventoryItem(Item item) {
+        var inventorySlot = this.Slots.FirstOrDefault(slot => slot.InventoryItem!=null && slot.InventoryItem.Item == item);
+        if(inventorySlot == null) {
+            return null;
+        }
+        var inventoryItem = inventorySlot.InventoryItem;
+        return inventoryItem;
+
+    }
+            
+
+     public bool RemoveItem(Item item) {
+        var inventoryItem = this.GetInventoryItem(item);
+        if(inventoryItem == null) {
+            return false;
+        }
+
+        foreach(var slot in this.Slots) {
+            if(slot.InventoryItem == inventoryItem) {
+                Debug.Log("Set InventoryItem to null");
+                slot.InventoryItem = null;
             }
         }
-
-        if(foundItem) {
-            this.InventoryChanged?.Invoke();
-            this.ItemRemoved?.Invoke(inventoryItem);
-        }
+        this.ItemRemoved?.Invoke(inventoryItem);
+        return true;
     }
+
+    public List<InventorySlot> GetSlotArea(Vector2 startPos, Vector2 size) {
+        var endPos = startPos + size;
+        var list = this.Slots.FindAll(slot => 
+            slot.Position.x >= startPos.x 
+            && slot.Position.y >= startPos.y
+            && slot.Position.x < endPos.x
+            && slot.Position.y < endPos.y).ToList();
+        return list;
+    }
+    
+    public List<Vector2> GetItemSlotArea(InventoryItem inventoryItem) {
+        var list = new List<Vector2>();
+        foreach(var slot in this.Slots) {
+            if(slot.InventoryItem == inventoryItem) {
+                list.Add(slot.Position);
+            }
+        }
+        return list;
+    }
+
 }
