@@ -60,9 +60,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c9f7d3d7c757cb4790f95146840b8d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  InventoryUIManager: {fileID: 0}
   Image: {fileID: 7784873538926798826}
   QuantityText: {fileID: 7784873538414350805}
   RectTransform: {fileID: 7784873539512452132}
+  InventoryItem:
+    Item:
+      Config: {fileID: 0}
+    Quantity: 0
+    Weight: 0
+  IsSelected: 0
 --- !u!1 &7784873538414350807
 GameObject:
   m_ObjectHideFlags: 0
@@ -258,7 +265,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:

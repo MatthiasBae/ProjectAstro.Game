@@ -121,7 +121,6 @@ public class Inventory : MonoBehaviour {
 
         foreach(var slot in this.Slots) {
             if(slot.InventoryItem == inventoryItem) {
-                Debug.Log("Set InventoryItem to null");
                 slot.InventoryItem = null;
             }
         }

@@ -145,7 +145,6 @@ GameObject:
   m_Component:
   - component: {fileID: 489293717542990043}
   - component: {fileID: 489293717542990047}
-  - component: {fileID: 489293717542990044}
   - component: {fileID: 489293717542990045}
   m_Layer: 0
   m_Name: Slots
@@ -182,36 +181,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 489293717542990040}
   m_CullTransparentMesh: 1
---- !u!114 &489293717542990044
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 489293717542990040}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.6862745}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 2
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
 --- !u!114 &489293717542990045
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -591,7 +560,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0.74509805}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -645,6 +614,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2eee7e8190f94884d94e1b7ea3130f85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  InventoryUIManager: {fileID: 0}
   Inventory: {fileID: 0}
   GridUI: {fileID: 2338217452500535434}
   HeaderUI: {fileID: 489293717694321206}
@@ -712,7 +682,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -740,6 +710,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b18a6b7c31f4620438aed54d3e54bee0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  DragDropController: {fileID: 0}
   GridContainerRectTransform: {fileID: 489293718552406643}
   SlotContainerRectTransform: {fileID: 489293717542990043}
   ItemContainerRectTransform: {fileID: 489293717736122666}
@@ -748,7 +719,5 @@ MonoBehaviour:
   SlotContainer: {fileID: 489293717542990040}
   ItemContainer: {fileID: 489293717736122667}
   GridLayout: {fileID: 489293717542990045}
-  ItemNotPlaceable: {r: 0.990566, g: 0, b: 0, a: 0}
-  ItemPlaceable: {r: 0, g: 0.6792453, b: 0.109484494, a: 0}
   Slots: []
   Items: []

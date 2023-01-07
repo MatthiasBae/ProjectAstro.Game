@@ -1,17 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class InventoryUI : MonoBehaviour {
-
+    
     [SerializeField]
-    private Inventory Inventory;
+    private InventoryDragDropUIController DragDropController;
 
-    [SerializeField]
-    private InventoryGridUI GridUI;
+    public Inventory Inventory;
 
-    [SerializeField]
-    private InventoryHeaderUI HeaderUI;
+    public InventoryGridUI GridUI;
+    public InventoryHeaderUI HeaderUI;
 
     [SerializeField]
     private RectTransform RectTransform;
@@ -23,11 +23,29 @@ public class InventoryUI : MonoBehaviour {
 
     private void RegisterEvents() {
         this.Inventory.ItemAdded += (inventorySlot) => {
-            this.GridUI.AddItem(inventorySlot.InventoryItem, inventorySlot.Position);
+            this.GridUI.AddItem(inventorySlot.InventoryItem, inventorySlot.Position, this.DragDropController, this);
         };
         this.Inventory.ItemRemoved += (inventoryItem) => {
             //@TODO: Gewicht updaten
             this.GridUI.RemoveItem(inventoryItem);
+        };
+
+        //@TODO: Event hier registrieren welches bei Click auf 
+        this.GridUI.ItemDropped += (info) => {
+            var position = info.Value;
+            var inventoryItemUI = info.Key;
+
+            
+            var addedSuccessfully = this.Inventory.TryAddItemAt(inventoryItemUI.InventoryItem.Item, inventoryItemUI.InventoryItem.Quantity, position);
+            if(!addedSuccessfully) {
+                return;
+            }
+            
+            this.DragDropController.SelectedItemUIInventory.Inventory.RemoveItem(inventoryItemUI.InventoryItem.Item);
+        };
+
+        this.DragDropController.ItemSelected += (itemUI) => {
+            
         };
     }
     
@@ -45,7 +63,7 @@ public class InventoryUI : MonoBehaviour {
         this.GridUI.InitializeSlots(this.Inventory);
 
         this.GridUI.ClearItems();
-        this.GridUI.AddItems(this.Inventory);
+        this.GridUI.AddItems(this, this.DragDropController);
 
         var height = this.Inventory.Config.Size.y * 40 + 120;
         this.UpdateSize(new Vector2(400, height));

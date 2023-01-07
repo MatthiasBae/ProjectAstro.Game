@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: TestItem
   Weight: 1.5
-  SpriteUI: {fileID: 21300000, guid: b47ca9e5315db2b4fa5d09ccced2fc87, type: 3}
-  Sprite: {fileID: 21300000, guid: b47ca9e5315db2b4fa5d09ccced2fc87, type: 3}
+  SpriteUI: {fileID: 21300000, guid: c1419325189c9e3468555e6b11f2a376, type: 3}
+  Sprite: {fileID: 21300000, guid: c1419325189c9e3468555e6b11f2a376, type: 3}
   Inventory:
-    Size: {x: 1, y: 1}
+    Size: {x: 2, y: 2}
     MaxStackSize: 1
     Weight: 0.4
