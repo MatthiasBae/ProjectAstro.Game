@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -28,83 +29,119 @@ public class InventoryGridUI : MonoBehaviour, IPointerClickHandler {
     
     [SerializeField]
     private GridLayoutGroup GridLayout;
-    
-    [SerializeField]
-    private List<InventorySlotUI> Slots;
+
     [SerializeField]
     private List<InventoryItemUI> Items;
+    [SerializeField]
+    private List<InventorySlotUI> Slots;
 
-    public event Action<KeyValuePair<InventoryItemUI, Vector2>> ItemDropped;
 
-    public void InitializeSlots(Inventory inventory) {
-        this.AddSlots(inventory.Config);
-        this.UpdateSize(inventory.Config);
+    public event Action<InventoryItemUI, Vector2> ItemDropped;
+    public event Action<InventoryItemUI> ItemSelected;
+
+
+    public void Render(Vector2 size) {
+        this.AddSlots(size);
+        this.UpdateSize(size);
         this.UpdatePosition();
     }
-
-    public void AddSlots(InventoryConfig inventoryConfig) {
-        for(int x = 0; x < inventoryConfig.Size.x; x++) {
-            for(int y = 0; y < inventoryConfig.Size.y; y++) {
-                GameObject slot = this.CreateSlot();
-                InventorySlotUI slotUI = slot.GetComponent<InventorySlotUI>();
-                this.Slots.Add(slotUI);
+    
+    public void AddSlots(Vector2 size) {
+        for(int x = 0; x < size.x; x++) {
+            for(int y = 0; y < size.y; y++) {
+                this.AddSlot(this.InventoryGridSlotPrefab);
             }
         }
     }
 
+    private void AddSlot(GameObject gameObject) {
+        GameObject slot = Instantiate(gameObject, this.SlotContainer.transform);
+        var slotUI = slot.GetComponent<InventorySlotUI>();
+        this.Slots.Add(slotUI);
+    }
+
+    public void DestroySlots() {
+        foreach(var slot in this.Slots) {
+            GameObject.Destroy(slot.gameObject);
+        }
+        this.Slots.Clear();
+    }
+    
     public Vector2 LocalPositionToSlotPosition(Vector2 localPosition) {
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(this.SlotContainerRectTransform, localPosition, null, out localPosition);
+        var cellSize = this.GridLayout.cellSize;
+        
+        localPosition.y = -localPosition.y;
+        localPosition += this.SlotContainerRectTransform.sizeDelta / 2;
+
         var slotPosition = new Vector2 {
-            x = Mathf.Floor(localPosition.x / this.GridLayout.cellSize.x),
-            y = Mathf.Floor(localPosition.y / this.GridLayout.cellSize.y)
+            x = Mathf.Floor(localPosition.x / cellSize.x),
+            y = Mathf.Floor(localPosition.y / cellSize.y)
         };
         return slotPosition;
     }
 
-
-    public void UpdateSize(InventoryConfig inventoryConfig) {
+    public Vector2 SlotPositionToAnchoredPosition(Vector2 slotPosition) {
         var cellSize = this.GridLayout.cellSize;
-        var gridSize = new Vector2(inventoryConfig.Size.x * cellSize.x, inventoryConfig.Size.y * cellSize.y);
-        var gridContainerSize = new Vector2(gridSize.x, gridSize.y + (40*2));
-        this.SlotContainerRectTransform.sizeDelta = gridSize;
-        this.ItemContainerRectTransform.sizeDelta = gridSize;
-        this.GridContainerRectTransform.sizeDelta = gridContainerSize;
+        var anchoredPosition = new Vector2 {
+            x = slotPosition.x * cellSize.x,
+            y = -(slotPosition.y * cellSize.y)
+        };
+        return anchoredPosition;
+    }
+
+    public void UpdateSize(Vector2 inventorySize) {
+        var cellSize = this.GridLayout.cellSize;
+        var size = new Vector2 {
+            x = inventorySize.x * cellSize.x,
+            y = inventorySize.y * cellSize.y
+        };
+        
+        this.SetSize(size);
     }
 
     public void UpdatePosition() {
-        var pos = new Vector2(this.SlotContainerRectTransform.sizeDelta.x / 2, -(this.SlotContainerRectTransform.sizeDelta.y / 2));
-        this.SlotContainerRectTransform.anchoredPosition = pos;
-        this.ItemContainerRectTransform.anchoredPosition = pos;
+        var containerSize = this.GridContainerRectTransform.sizeDelta;
+        var position = new Vector2(containerSize.x / 2, -containerSize.y / 2);
+        
+        this.SetPosition(position);
     }
 
-    private GameObject CreateSlot() {
-        GameObject slot = Instantiate(this.InventoryGridSlotPrefab, this.SlotContainer.transform);
-        return slot;
+    public void SetPosition(Vector2 position) {
+        this.GridContainerRectTransform.anchoredPosition = position;
+        this.SlotContainerRectTransform.anchoredPosition = position;
+        this.ItemContainerRectTransform.anchoredPosition = position;
+
     }
 
-    public void ClearSlots() {
-        foreach(var slot in this.Slots) {
-            Destroy(slot.gameObject);
-        }
-        this.Slots.Clear();
+    public void SetSize(Vector2 size) {
+        this.SlotContainerRectTransform.sizeDelta = size;
+        this.ItemContainerRectTransform.sizeDelta = size;
+        this.GridContainerRectTransform.sizeDelta = size;
+        
+        //gridContainerSize etwas größer gemacht damit es visuell ein bisschen schöner ist
+        //var gridContainerSize = new Vector2(gridSize.x, gridSize.y + (40*2));
     }
 
-    public void AddItem(InventoryItem inventoryItem, Vector2 position, InventoryDragDropUIController dragDropController, InventoryUI inventoryUI) {
-        InventoryItemUI itemUI = this.CreateItem(inventoryItem, dragDropController, inventoryUI);
+    //Generiert ein neues UI Gameobject für das Item
+    public void AddItem(InventoryItem inventoryItem, Vector2 slotCoordinates, InventoryDragDropUIController dragDropController, InventoryUI inventoryUI) {
+        
         var cellSize = this.GridLayout.cellSize;
-        itemUI.UpdateUI();
-        itemUI.SetSize(cellSize * inventoryItem.Item.Config.Inventory.Size);
+        var itemSize = inventoryItem.Item.Config.Inventory.Size;
+        var itemUISize = cellSize * itemSize;
+        
+        var itemUI = this.CreateItemUI(inventoryItem, dragDropController, inventoryUI, itemUISize);
+        this.SetItemPosition(itemUI, slotCoordinates);
 
-        var transformPos = new Vector2(position.x * cellSize.x, -position.y * cellSize.y);
-        itemUI.SetAnchoredPosition(transformPos); 
         this.Items.Add(itemUI);
     }
-    public void AddItem(InventoryItemUI itemUI, Vector2 position) {
-        var cellSize = this.GridLayout.cellSize;
-        var transformPos = new Vector2(position.x * cellSize.x, -position.y * cellSize.y);
-        itemUI.gameObject.transform.SetParent(this.ItemContainer.transform);
-        itemUI.SetAnchoredPosition(transformPos);
-        this.Items.Add(itemUI);
+    //Generiert KEIN neues UI Gameobject für das Item und nimmt das vorhandene
+    public void AddItem(InventoryItemUI inventoryItemUI, Vector2 slotCoordinates, InventoryUI inventoryUI) {
+        this.SetItemPosition(inventoryItemUI, slotCoordinates);
+        inventoryItemUI.InventoryUI = inventoryUI;
+        this.Items.Add(inventoryItemUI);
     }
+
     public void AddItems(InventoryUI inventoryUI, InventoryDragDropUIController dragDropController) {
         var inventory = inventoryUI.Inventory;
         foreach(var slot in inventory.Slots) {
@@ -115,7 +152,15 @@ public class InventoryGridUI : MonoBehaviour, IPointerClickHandler {
             this.AddItem(slot.InventoryItem, slot.Position, dragDropController, inventoryUI);
         }
     }
-    
+
+
+    private void SetItemPosition(InventoryItemUI itemUI, Vector2 slotCoordinates) {
+        itemUI.transform.SetParent(this.ItemContainer.transform);
+
+        var anchoredPosition = this.SlotPositionToAnchoredPosition(slotCoordinates);
+        itemUI.SetAnchoredPosition(anchoredPosition);
+    }
+
     public void RemoveItem(InventoryItem inventoryItem, bool destroyItemUI = true) {
         var inventoryItemUI = this.Items.FirstOrDefault(item => item.InventoryItem == inventoryItem);
         this.Items.Remove(inventoryItemUI);
@@ -126,15 +171,18 @@ public class InventoryGridUI : MonoBehaviour, IPointerClickHandler {
         Destroy(inventoryItemUI.gameObject);
     }
 
-    private InventoryItemUI CreateItem(InventoryItem inventoryItem, InventoryDragDropUIController dragDropController, InventoryUI inventoryUI) {
-        var item = Instantiate(this.InventoryGridItemPrefab, this.ItemContainer.transform);
+    private InventoryItemUI CreateItemUI(InventoryItem inventoryItem, InventoryDragDropUIController dragDropController, InventoryUI inventoryUI, Vector2 size) {
+        var itemPrefab = this.InventoryGridItemPrefab;
+        var itemContainerTransform = this.ItemContainer.transform;
+
+        var item = Instantiate(itemPrefab, itemContainerTransform);
         var itemUI = item.GetComponent<InventoryItemUI>();
         itemUI.DragDropController = dragDropController;
         itemUI.InventoryItem = inventoryItem;
         itemUI.InventoryUI = inventoryUI;
+        itemUI.UpdateUI(size);
         return itemUI;
     }
-
     public void ClearItems() {
         foreach(var item in this.Items) {
             Destroy(item.gameObject);
@@ -149,12 +197,21 @@ public class InventoryGridUI : MonoBehaviour, IPointerClickHandler {
 
     public void OnPointerClick(PointerEventData eventData) {
         if(this.DragDropController.SelectedUIItem == null) {
+            Debug.Log("Ausgewähltes item ist hier null. Daher wird nix beim Klick gemacht");
             return;
         }
-        this.DragDropController.SelectGrid(this);
+        var inventoryUIItem = this.DragDropController.SelectedUIItem;
+        var coordinates = this.LocalPositionToSlotPosition(Input.mousePosition);
+
+
+        this.OnItemDropped(inventoryUIItem, coordinates);
     }
 
-    public void OnItemDropped(InventoryItemUI itemUI, Vector2 position) {
-        this.ItemDropped?.Invoke(new KeyValuePair<InventoryItemUI, Vector2>(itemUI, position));
+    public void OnItemDropped(InventoryItemUI inventoryUIItem, Vector2 position) {
+        this.ItemDropped?.Invoke(inventoryUIItem, position);
+    }
+
+    public void OnItemSelected(InventoryItemUI inventoryItemUI) {
+        this.ItemSelected?.Invoke(inventoryItemUI);
     }
 }

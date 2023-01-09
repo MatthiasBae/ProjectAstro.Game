@@ -8,10 +8,15 @@ using UnityEngine;
 public class Inventory : MonoBehaviour {
 
     public float Weight;
+    public string Name;
+    
     public InventoryConfig Config;
     public List<InventorySlot> Slots;
     
-    public event Action<InventorySlot> ItemAdded;
+    public event Action<InventoryItem, Vector2, bool> ItemAddedTry;
+    public event Action<InventoryItem, Vector2, bool> ItemRemovedTry;
+    
+    public event Action<InventoryItem, Vector2> ItemAdded;
     public event Action<InventoryItem> ItemRemoved;
 
     private InventorySlot GetSlot(Vector2 position) {
@@ -35,7 +40,24 @@ public class Inventory : MonoBehaviour {
             }
         }
     }
-    
+
+    public bool TryAddItem(InventoryItem inventoryItem) {
+        var addedItem = false;
+        foreach(var slot in this.Slots) {
+            if(slot.InventoryItem != null) {
+                continue;
+            }
+
+            var addedItemAt = this.TryAddItemAt(inventoryItem, slot.Position);
+            if(addedItemAt) {
+                Debug.Log($"Füge hinzu InventoryItem in {slot.Position} in Inventar {this.Config.Name}");
+                addedItem = true;
+                break;
+            }
+        }
+        return addedItem;
+    }
+
     public bool TryAddItem(Item item, int amount) {
         var addedItem = false;
         foreach(var slot in this.Slots) {
@@ -49,35 +71,74 @@ public class Inventory : MonoBehaviour {
                 break;
             }
         }
+        
         return addedItem;
     }
-    
-    public bool TryAddItemAt(Item item, int amount, Vector2 position) {
+    public bool TryAddItemAt(InventoryItem inventoryItem, Vector2 position) {
+        var item = inventoryItem.Item;
+        var startSlot = this.GetSlot(position);
+        
         var hasEnoughSlots = this.HasEnoughSlots(item);
         if(!hasEnoughSlots) {
-            return false;
-        }
-        
-        var slotArea = this.GetSlotArea(position, item.Config.Inventory.Size);
-        var isPlaceable = this.IsItemPlaceableAt(slotArea);
-        if(!isPlaceable) {
+            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
             return false;
         }
 
         var endPosition = position + item.Config.Inventory.Size;
         if(endPosition.x > this.Config.Size.x || endPosition.y > this.Config.Size.y) {
+            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
             return false;
         }
 
-        var inventoryItem = InventoryItem.Create(item, amount);
+        var slotArea = this.GetSlotArea(position, item.Config.Inventory.Size);
+        var isPlaceable = this.IsItemPlaceableAt(slotArea);
+        if(!isPlaceable) {
+            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
+            return false;
+        }
 
         foreach(var slot in slotArea) {
             slot.InventoryItem = inventoryItem;
         }
 
-        var startSlot = this.GetSlot(position);
+        
+        Debug.Log($"Füge hinzu InventoryItem in {startSlot} in Inventar {this.Config.Name}");
+        this.ItemAddedTry?.Invoke(inventoryItem, position, true);
+        this.ItemAdded?.Invoke(inventoryItem, position);
+        return true;
+    }
 
-        this.ItemAdded?.Invoke(startSlot);
+    public bool TryAddItemAt(Item item, int amount, Vector2 position) {
+        var inventoryItem = InventoryItem.Create(item, amount);
+        
+        var hasEnoughSlots = this.HasEnoughSlots(item);
+        if(!hasEnoughSlots) {
+            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
+            return false;
+        }
+
+        var endPosition = position + item.Config.Inventory.Size;
+        if(endPosition.x > this.Config.Size.x || endPosition.y > this.Config.Size.y) {
+            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
+            return false;
+        }
+
+        var slotArea = this.GetSlotArea(position, item.Config.Inventory.Size);
+        var isPlaceable = this.IsItemPlaceableAt(slotArea);
+        if(!isPlaceable) {
+            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
+            return false;
+        }
+
+
+        foreach(var slot in slotArea) {
+            slot.InventoryItem = inventoryItem;
+            
+        }
+
+        var startSlot = this.GetSlot(position);
+        this.ItemAddedTry?.Invoke(inventoryItem, position, true);
+        this.ItemAdded?.Invoke(inventoryItem, position);
         return true;
     }
 
@@ -121,6 +182,21 @@ public class Inventory : MonoBehaviour {
 
         foreach(var slot in this.Slots) {
             if(slot.InventoryItem == inventoryItem) {
+                slot.InventoryItem = null;
+            }
+        }
+        this.ItemRemoved?.Invoke(inventoryItem);
+        return true;
+    }
+
+    public bool RemoveItem(InventoryItem inventoryItem) {
+        if(inventoryItem == null) {
+            return false;
+        }
+
+        foreach(var slot in this.Slots) {
+            if(slot.InventoryItem == inventoryItem) {
+                Debug.Log($"Entferne InventoryItem in {slot.Position} aus Inventar {this.Config.Name}");
                 slot.InventoryItem = null;
             }
         }

@@ -18,14 +18,13 @@ public class InventoryItemUI : MonoBehaviour, IPointerClickHandler {
     public InventoryItem InventoryItem;
     public InventoryDragDropUIController DragDropController;
     
-    public bool IsSelected;
-    private void Start() {
-        this.Image.sprite = this.InventoryItem.Item.Config.SpriteUI;
-    }
-
-    public void UpdateUI() {
-        this.SetSprite(this.InventoryItem.Item.Config.SpriteUI);
-        this.SetQuantity(this.InventoryItem.Quantity);
+    public void UpdateUI(Vector2 size) {
+        var sprite = this.InventoryItem.Item.Config.Sprite;
+        var quantity = this.InventoryItem.Quantity;
+        
+        this.SetSprite(sprite);
+        this.SetQuantity(quantity);
+        this.SetSize(size);
     }
     public void SetSprite(Sprite sprite) {
         this.Image.sprite = sprite;
@@ -54,8 +53,7 @@ public class InventoryItemUI : MonoBehaviour, IPointerClickHandler {
         if(this.DragDropController.SelectedUIItem != null) {
             return;
         }
-        
-        
+
         this.DragDropController.SelectItem(this);
     }
 }

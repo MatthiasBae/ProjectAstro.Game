@@ -10,63 +10,120 @@ public class InventoryUI : MonoBehaviour {
 
     public Inventory Inventory;
 
-    public InventoryGridUI GridUI;
-    public InventoryHeaderUI HeaderUI;
+    //public InventoryGridUI GridUI;
+    //public InventoryHeaderUI HeaderUI;
 
+    public InventoryGridUI Grid;
+    public InventoryHeaderUI Header;
     [SerializeField]
     private RectTransform RectTransform;
     
     private void Awake() {
         this.RegisterEvents();
-        this.UpdateUI();
+        //this.UpdateUI();
+        this.Render();
     }
 
+    //@TODO: Eventuell noch ein UnregisterEvents machen wenn das Inventar ausgetauscht wird?
     private void RegisterEvents() {
-        this.Inventory.ItemAdded += (inventorySlot) => {
-            this.GridUI.AddItem(inventorySlot.InventoryItem, inventorySlot.Position, this.DragDropController, this);
-        };
-        this.Inventory.ItemRemoved += (inventoryItem) => {
-            //@TODO: Gewicht updaten
-            this.GridUI.RemoveItem(inventoryItem);
-        };
 
-        //@TODO: Event hier registrieren welches bei Click auf 
-        this.GridUI.ItemDropped += (info) => {
-            var position = info.Value;
-            var inventoryItemUI = info.Key;
 
-            
-            var addedSuccessfully = this.Inventory.TryAddItemAt(inventoryItemUI.InventoryItem.Item, inventoryItemUI.InventoryItem.Quantity, position);
-            if(!addedSuccessfully) {
+        //this.Inventory.ItemAdded += (inventorySlot) => {
+        //    var inventoryItemAdded = inventorySlot.InventoryItem;
+        //    var inventoryUIItemSelected = this.DragDropController.SelectedUIItem;
+        //    var inventoryItemSelected = inventoryUIItemSelected?.InventoryItem;
+        //    var position = inventorySlot.Position;
+
+        //    if(inventoryUIItemSelected != null && inventoryItemSelected == inventoryItemAdded) {
+        //        this.GridUI.AddItem(inventoryUIItemSelected, position);
+        //        return;
+        //    }
+        //    this.GridUI.AddItem(inventoryItemAdded, position, this.DragDropController, this);
+        //};
+        
+        this.Inventory.ItemAddedTry += (inventoryItem, slotCoordinates, success) => {
+            if(!success) {
                 return;
             }
-            
-            this.DragDropController.SelectedItemUIInventory.Inventory.RemoveItem(inventoryItemUI.InventoryItem.Item);
+            this.AddItemUI(inventoryItem, slotCoordinates);
         };
 
-        this.DragDropController.ItemSelected += (itemUI) => {
-            
+        this.Inventory.ItemRemoved += (inventoryItem) => {
+            this.RemoveItemUI(inventoryItem);
+        };
+
+        this.Grid.ItemDropped += (inventoryItemUI, slotCoordinates) => {
+            var inventoryItem = inventoryItemUI.InventoryItem;
+
+            var added = this.Inventory.TryAddItemAt(inventoryItem, slotCoordinates);
+            if(added) {
+                Debug.Log($"InventoryItem in Inventar {this.Inventory.Config.Name} nicht hinzugefügt");
+
+                this.DragDropController.SelectGrid(this.Grid);
+            }
+        };
+
+        this.Grid.ItemSelected += (inventoryItemUI) => {
+            var inventoryItem = inventoryItemUI.InventoryItem;
+            Debug.Log($"InventoryItem aus Inventar {this.Inventory.Config.Name} ausgewählt");
+            this.Inventory.RemoveItem(inventoryItem);
         };
     }
-    
 
-    public void UpdateUI() {
-        if(this.Inventory.Config == null || this.Inventory == null) {
-            Debug.LogError("Inventory or InventoryConfig is null");
+    public void Render() {
+        var weight = this.Inventory.Weight;
+        var maxWeight = this.Inventory.Config.MaxWeight;
+        var name = this.Inventory.Config.Name;
+        var size = this.Inventory.Config.Size;
+
+        this.Header.Render(name, weight, maxWeight);
+        this.Grid.Render(size);
+
+        var height = (this.Inventory.Config.Size.y + 1) * 40;
+        this.UpdateSize(new Vector2(400, height));
+    }
+
+    private void AddItemUI(InventoryItem inventoryItem, Vector2 slotCoordinates) {
+        var selectedUIInventoryItem = this.DragDropController?.SelectedUIItem;
+
+        if(selectedUIInventoryItem == null) {
+            this.Grid.AddItem(inventoryItem, slotCoordinates, this.DragDropController, this);
             return;
         }
-        
-        this.HeaderUI.SetName(this.Inventory.Config.Name);
-        this.HeaderUI.SetWeight(this.Inventory.Weight, this.Inventory.Config.MaxWeight);
-        
-        this.GridUI.ClearSlots();
-        this.GridUI.InitializeSlots(this.Inventory);
 
-        this.GridUI.ClearItems();
-        this.GridUI.AddItems(this, this.DragDropController);
+        var selectedInventoryItem = selectedUIInventoryItem.InventoryItem;
+        if(inventoryItem != selectedInventoryItem) {
+            this.Grid.AddItem(inventoryItem, slotCoordinates, this.DragDropController, this);
+            return;
+            
+        }
 
-        var height = this.Inventory.Config.Size.y * 40 + 120;
-        this.UpdateSize(new Vector2(400, height));
+        if(inventoryItem == selectedInventoryItem) {
+            this.Grid.AddItem(selectedUIInventoryItem, slotCoordinates, this);
+            return;
+        }
+
+    }
+
+    public void RemoveItemUI(InventoryItem inventoryItem) {
+        var selectedUIInventoryItem = this.DragDropController?.SelectedUIItem;
+
+        if(selectedUIInventoryItem == null) {
+            this.Grid.RemoveItem(inventoryItem, true);
+            return;
+        }
+
+        var selectedInventoryItem = selectedUIInventoryItem.InventoryItem;
+        if(inventoryItem != selectedInventoryItem) {
+            this.Grid.RemoveItem(inventoryItem, true);
+            return;
+
+        }
+
+        if(inventoryItem == selectedInventoryItem) {
+            this.Grid.RemoveItem(inventoryItem, false);
+            return;
+        }
     }
 
     private void UpdateSize(Vector2 size) {

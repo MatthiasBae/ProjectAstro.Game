@@ -20,14 +20,26 @@ public class ItemDetector : MonoBehaviour {
         this.ItemFound += (dropItem) => {
             var item = dropItem.Item;
 
-            Debug.Log($"Item hinzugefügt:{this.Inventory.TryAddItem(item, 1)}");
+            this.Inventory.TryAddItem(item, 1);
         };
 
         this.ItemLost += (dropItem) => {
             var item = dropItem.Item;
-
-            Debug.Log($"Item entfernt:{this.Inventory.RemoveItem(item)}");
+            
+            this.Inventory.RemoveItem(item);
         };
+
+        //@TODO: Wenn im Inventory das Item nicht mehr vorhanden ist, dann soll es auch aus der Welt entfernt werden
+        //this.Inventory.ItemRemoved += (inventoryItem) => {
+        //    var item = inventoryItem.Item;
+
+        //    foreach(var dropItem in this.Items) {
+        //        if(dropItem.Item == item) {
+        //            GameObject.Destroy(dropItem.gameObject);
+        //            break;
+        //        }
+        //    }
+        //};
     }
 
 

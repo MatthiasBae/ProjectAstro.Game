@@ -11,8 +11,6 @@ public class InventoryDragDropUIController : MonoBehaviour {
     public InventoryGridUI SelectedUIGrid;
     public GameObject DraggedItemContainer;
 
-    public event Action<InventoryItemUI> ItemSelected;
-    public event Action<InventoryGridUI> GridSelected;
 
     private void Update() {
         if(this.SelectedUIItem == null) {
@@ -23,13 +21,14 @@ public class InventoryDragDropUIController : MonoBehaviour {
         this.SelectedUIItem.SetPosition(Input.mousePosition);
     }
 
+    //@TODO: Auch noch refactorieren
     public void SelectItem(InventoryItemUI item) {
         item.gameObject.transform.SetParent(this.DraggedItemContainer.transform);
         item.EnableRaycastTarget(false);
         this.SelectedUIItem = item;
         this.SelectedItemUIInventory = item.InventoryUI;
         
-        this.ItemSelected?.Invoke(item);
+        this.SelectedItemUIInventory.Grid.OnItemSelected(item);
     }
     public void UnselectItem(InventoryItemUI item) {
         if(this.SelectedUIItem != item) {
@@ -37,22 +36,18 @@ public class InventoryDragDropUIController : MonoBehaviour {
             return;
         }
         
+        this.SelectedUIItem.gameObject.transform.SetParent(this.SelectedUIGrid.ItemContainerRectTransform.transform);
+        
+        this.SelectedUIItem.EnableRaycastTarget(true);
+
+        this.SelectedUIItem.InventoryUI = item.InventoryUI;
         this.SelectedUIItem = null;
+        this.SelectedItemUIInventory = null;
     }
 
     public void SelectGrid(InventoryGridUI grid) {
-
-        Vector2 localPosition;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(grid.SlotContainerRectTransform, Input.mousePosition, null, out localPosition);
-
-        localPosition.y = -localPosition.y;
-        localPosition += grid.SlotContainerRectTransform.sizeDelta / 2;
         
-        var clickedSlotPosition = grid.LocalPositionToSlotPosition(localPosition);
-        grid.OnItemDropped(this.SelectedUIItem, clickedSlotPosition);
         this.SelectedUIGrid = grid;
-
-        this.GridSelected?.Invoke(grid);
+        this.UnselectItem(this.SelectedUIItem);
     }
-    
 }
