@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using UnityEngine;
 
 public class TimeManager : MonoBehaviour {
     //@TODO: Echtzeit einbauen
-    
+    //@TODO: StartDate festlegen damit ich die Kalorien pro Tag ausrechnen kann
     public static event Action<DateTime> TimeChanged;
     
     public static event Action<DateTime> MinuteChanged;
@@ -21,47 +22,60 @@ public class TimeManager : MonoBehaviour {
     public int Hour;
     public int Minute;
 
-    private DateTime PreviousDate;
-    private DateTime ActualDate;
+    public static DateTime Last;
+    public static DateTime Now;
 
+    
     private void Awake() {
-        this.ActualDate = new DateTime(this.Year, this.Month, this.Day, this.Hour, this.Minute, 0);
+        TimeManager.Now = new DateTime(this.Year, this.Month, this.Day, this.Hour, this.Minute, 0);
         this.RegisterListeners();
     }
 
     public void RegisterListeners() {
         TickManager.OnTimeSystemTick += () => {
-            this.PreviousDate = this.ActualDate;
-            this.ActualDate = this.ActualDate.AddMinutes(1);
+            TimeManager.Last = TimeManager.Now;
+            TimeManager.Now = TimeManager.Now.AddMinutes(1);
 
-            if(this.PreviousDate.Minute != this.ActualDate.Minute) {
-                MinuteChanged?.Invoke(this.ActualDate);
+            if(TimeManager.Last.Minute != TimeManager.Now.Minute) {
+                MinuteChanged?.Invoke(TimeManager.Now);
             }
 
-            if(this.PreviousDate.Hour != this.ActualDate.Hour) {
-                HourChanged?.Invoke(this.ActualDate);
+            if(TimeManager.Last.Hour != TimeManager.Now.Hour) {
+                HourChanged?.Invoke(TimeManager.Now);
             }
 
-            if(this.PreviousDate.Day != this.ActualDate.Day) {
-                DayChanged?.Invoke(this.ActualDate);
+            if(TimeManager.Last.Day != TimeManager.Now.Day) {
+                DayChanged?.Invoke(TimeManager.Now);
             }
 
-            if(this.PreviousDate.Month != this.ActualDate.Month) {
-                MonthChanged?.Invoke(this.ActualDate);
+            if(TimeManager.Last.Month != TimeManager.Now.Month) {
+                MonthChanged?.Invoke(TimeManager.Now);
             }
 
-            if(this.PreviousDate.Year != this.ActualDate.Year) {
-                YearChanged?.Invoke(this.ActualDate);
+            if(TimeManager.Last.Year != TimeManager.Now.Year) {
+                YearChanged?.Invoke(TimeManager.Now);
             }
 
-            this.Minute = this.ActualDate.Minute;
-            this.Hour = this.ActualDate.Hour;
-            this.Day = this.ActualDate.Day;
-            this.Month = this.ActualDate.Month;
-            this.Year = this.ActualDate.Year;
+            this.Minute = TimeManager.Now.Minute;
+            this.Hour = TimeManager.Now.Hour;
+            this.Day = TimeManager.Now.Day;
+            this.Month = TimeManager.Now.Month;
+            this.Year = TimeManager.Now.Year;
             
 
-            TimeChanged?.Invoke(this.ActualDate);
+            TimeChanged?.Invoke(TimeManager.Now);
         };
+
+    }
+
+    public static TimeSpan TimePassed {
+        get {
+            var midnight = new DateTime(TimeManager.Now.Year, TimeManager.Now.Month, TimeManager.Now.Day, 0, 0, 0);
+            return TimeManager.Now - midnight;
+        }
+    }
+
+    public static TimeSpan TimeSince(DateTime from, DateTime to) {
+        return to - from;
     }
 }

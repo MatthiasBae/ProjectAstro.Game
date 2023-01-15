@@ -13,8 +13,8 @@ public class TickManager : MonoBehaviour {
     public static float Tick;
     public static float TimeSystemTick;
 
-    public const float TickRate = 1.0f;
-    public const float TimeSystemTickRate = 10.0f;
+    public float TickRate;
+    public float TimeSystemTickRate;
 
     private void Update() {
         var deltaTime = Time.deltaTime;
@@ -22,16 +22,16 @@ public class TickManager : MonoBehaviour {
         TickManager.Timer += deltaTime;
         TickManager.TimeSystemTimer += deltaTime;
         
-        if(TickManager.Timer >= TickRate) {
+        if(TickManager.Timer >= this.TickRate) {
             TickManager.OnTick?.Invoke();
             TickManager.Tick++;
-            TickManager.Timer -= TickRate;
+            TickManager.Timer -= this.TickRate;
         }
 
-        if(TickManager.TimeSystemTimer >= TimeSystemTickRate) {
+        if(TickManager.TimeSystemTimer >= this.TimeSystemTickRate) {
             TickManager.OnTimeSystemTick?.Invoke();
             TickManager.TimeSystemTick++;
-            TickManager.TimeSystemTimer -= TimeSystemTickRate;
+            TickManager.TimeSystemTimer -= this.TimeSystemTickRate;
         }
     }
 }

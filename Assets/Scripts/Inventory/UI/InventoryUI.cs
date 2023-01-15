@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class InventoryUI : MonoBehaviour {
-    
+
     [SerializeField]
     private InventoryDragDropUIController DragDropController;
 
@@ -17,7 +17,7 @@ public class InventoryUI : MonoBehaviour {
     public InventoryHeaderUI Header;
     [SerializeField]
     private RectTransform RectTransform;
-    
+
     private void Awake() {
         this.RegisterEvents();
         //this.UpdateUI();
@@ -27,29 +27,17 @@ public class InventoryUI : MonoBehaviour {
     //@TODO: Eventuell noch ein UnregisterEvents machen wenn das Inventar ausgetauscht wird?
     private void RegisterEvents() {
 
-
-        //this.Inventory.ItemAdded += (inventorySlot) => {
-        //    var inventoryItemAdded = inventorySlot.InventoryItem;
-        //    var inventoryUIItemSelected = this.DragDropController.SelectedUIItem;
-        //    var inventoryItemSelected = inventoryUIItemSelected?.InventoryItem;
-        //    var position = inventorySlot.Position;
-
-        //    if(inventoryUIItemSelected != null && inventoryItemSelected == inventoryItemAdded) {
-        //        this.GridUI.AddItem(inventoryUIItemSelected, position);
-        //        return;
-        //    }
-        //    this.GridUI.AddItem(inventoryItemAdded, position, this.DragDropController, this);
-        //};
-        
         this.Inventory.ItemAddedTry += (inventoryItem, slotCoordinates, success) => {
             if(!success) {
                 return;
             }
             this.AddItemUI(inventoryItem, slotCoordinates);
+            this.RenderHeader();
         };
 
         this.Inventory.ItemRemoved += (inventoryItem) => {
             this.RemoveItemUI(inventoryItem);
+            this.RenderHeader();
         };
 
         this.Grid.ItemDropped += (inventoryItemUI, slotCoordinates) => {
@@ -57,7 +45,7 @@ public class InventoryUI : MonoBehaviour {
 
             var added = this.Inventory.TryAddItemAt(inventoryItem, slotCoordinates);
             if(added) {
-                Debug.Log($"InventoryItem in Inventar {this.Inventory.Config.Name} nicht hinzugefügt");
+                //Debug.Log($"InventoryItem in Inventar {this.Inventory.Config.Name} nicht hinzugefügt");
 
                 this.DragDropController.SelectGrid(this.Grid);
             }
@@ -65,18 +53,26 @@ public class InventoryUI : MonoBehaviour {
 
         this.Grid.ItemSelected += (inventoryItemUI) => {
             var inventoryItem = inventoryItemUI.InventoryItem;
-            Debug.Log($"InventoryItem aus Inventar {this.Inventory.Config.Name} ausgewählt");
+            //Debug.Log($"InventoryItem aus Inventar {this.Inventory.Config.Name} ausgewählt");
             this.Inventory.RemoveItem(inventoryItem);
         };
     }
 
     public void Render() {
+        this.RenderHeader();
+        this.RenderGrid();
+    }
+
+    public void RenderHeader() {
         var weight = this.Inventory.Weight;
         var maxWeight = this.Inventory.Config.MaxWeight;
         var name = this.Inventory.Config.Name;
-        var size = this.Inventory.Config.Size;
 
         this.Header.Render(name, weight, maxWeight);
+    }
+
+    public void RenderGrid() { 
+        var size = this.Inventory.Config.Size;
         this.Grid.Render(size);
 
         var height = (this.Inventory.Config.Size.y + 1) * 40;

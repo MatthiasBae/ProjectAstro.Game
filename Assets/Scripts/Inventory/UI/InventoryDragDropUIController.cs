@@ -9,6 +9,7 @@ public class InventoryDragDropUIController : MonoBehaviour {
     public InventoryUI SelectedItemUIInventory;
     public InventoryItemUI SelectedUIItem;
     public InventoryGridUI SelectedUIGrid;
+    
     public GameObject DraggedItemContainer;
 
 
@@ -23,7 +24,7 @@ public class InventoryDragDropUIController : MonoBehaviour {
 
     //@TODO: Auch noch refactorieren
     public void SelectItem(InventoryItemUI item) {
-        item.gameObject.transform.SetParent(this.DraggedItemContainer.transform);
+        item.gameObject.transform.SetParent(this.DraggedItemContainer.transform, false);
         item.EnableRaycastTarget(false);
         this.SelectedUIItem = item;
         this.SelectedItemUIInventory = item.InventoryUI;
