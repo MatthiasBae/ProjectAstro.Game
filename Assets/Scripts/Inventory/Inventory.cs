@@ -1,170 +1,138 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
+public class Inventory {
+    public Dictionary<Vector2, Item> Slots;
 
-public class Inventory : MonoBehaviour {
-
-    public float Weight;
-    
     public InventoryConfig Config;
-    public List<InventorySlot> Slots;
-    
-    public event Action<InventoryItem, Vector2, bool> ItemAddedTry;
-    public event Action<InventoryItem, Vector2, bool> ItemRemovedTry;
-    
-    public event Action<InventoryItem, Vector2> ItemAdded;
-    public event Action<InventoryItem> ItemRemoved;
 
-    private InventorySlot GetSlot(Vector2 position) {
-        return this.Slots.FirstOrDefault(slot => slot.Position == position);
-    }
+    public event Action<Item> ItemRemoved;
+    public event Action<Item, Vector2> ItemAdded;
+    public event Action<Item, Vector2, bool> ItemAddedTry;
 
-    private void Awake() {
+    public Inventory(InventoryConfig inventoryConfig) {
+        this.Config = inventoryConfig;
+        this.Slots = new Dictionary<Vector2, Item>();
         this.CreateSlots();
     }
 
-    public void CreateSlots() {
-        this.Slots.Clear();
+    private void CreateSlots() {
         for(int y = 0; y < this.Config.Size.y; y++) {
             for(int x = 0; x < this.Config.Size.x; x++) {
-                var slot = new InventorySlot() {
-                    Position = new Vector2(x, y),
-                    InventoryItem = null
-                };
-            
-                this.Slots.Add(slot);
+                this.Slots.Add(
+                    new Vector2(x, y),
+                    null
+                );
             }
         }
     }
 
-    public bool TryAddItem(InventoryItem inventoryItem) {
-        var addedItem = false;
+    public bool TryAddItem(Item item) {
+        var added = false;
         foreach(var slot in this.Slots) {
-            if(slot.InventoryItem != null) {
+            var slotPos = slot.Key;
+            var slotItem = slot.Value;
+            if(slotItem != null) {
                 continue;
             }
 
-            var addedItemAt = this.TryAddItemAt(inventoryItem, slot.Position);
-            if(addedItemAt) {
-                Debug.Log($"Füge hinzu InventoryItem in {slot.Position} in Inventar {this.Config.Name}");
-                addedItem = true;
+            added = this.TryAddItemAt(item, slotPos);
+            
+            if(added) {
                 break;
             }
         }
-        return addedItem;
+        return added;
     }
 
-    public bool TryAddItemAt(InventoryItem inventoryItem, Vector2 position) {
-        var item = inventoryItem.Item;
-        var startSlot = this.GetSlot(position);
-        var hasEnoughSlots = this.HasEnoughSlots(item);
-        
-        if(!hasEnoughSlots) {
-            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
+    public bool TryAddItemAt(Item item, Vector2 position) {
+        var itemTooLarge = this.IsItemTooLarge(item);
+        if(itemTooLarge) {
+            this.OnItemAddedTry(item, position, false);
             return false;
         }
 
-        var endPosition = position + item.Config.Inventory.Size;
-        if(endPosition.x > this.Config.Size.x || endPosition.y > this.Config.Size.y) {
-            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
+        var endPosition = item.Config.Inventory.Size + position;
+        var isSlotAreaEmpty = this.IsSlotAreaEmpty(position, endPosition);
+        if(!isSlotAreaEmpty) {
+            this.OnItemAddedTry(item, position, false);
             return false;
         }
 
-        var slotArea = this.GetSlotArea(position, item.Config.Inventory.Size);
-        var isPlaceable = this.IsItemPlaceableAt(slotArea);
-        if(!isPlaceable) {
-            this.ItemAddedTry?.Invoke(inventoryItem, position, false);
-            return false;
-        }
-
-        foreach(var slot in slotArea) {
-            slot.InventoryItem = inventoryItem;
-        }
-        
-        this.Weight += inventoryItem.Weight;
-        
-        //Debug.Log($"Füge hinzu InventoryItem in {startSlot} in Inventar {this.Config.Name}");
-        this.ItemAddedTry?.Invoke(inventoryItem, position, true);
-        this.ItemAdded?.Invoke(inventoryItem, position);
-        return true;
-    }
-    
-    public bool IsItemPlaceableAt(List<InventorySlot> inventorySlots) {
-        foreach(var slot in inventorySlots) {
-            if(slot.InventoryItem!= null) {
-                return false;
-            }
-        }
-
+        //Hier wird neues Item hinzugefügt
+        this.AddItem(item, position);
+        this.OnItemAddedTry(item, position, true);
         return true;
     }
 
-    public bool HasEnoughSlots(Item item){
-        var itemSize = item.Config.Inventory.Size;
-        var inventorySize = this.Config.Size;
-
-        if(itemSize.x > inventorySize.x || itemSize.y > inventorySize.y) {
-            return false;
-        }
-        return true;
-    }
-
-
-    public InventoryItem GetInventoryItem(Item item) {
-        var inventorySlot = this.Slots.FirstOrDefault(slot => slot.InventoryItem!=null && slot.InventoryItem.Item == item);
-        if(inventorySlot == null) {
-            return null;
-        }
-        var inventoryItem = inventorySlot.InventoryItem;
-        return inventoryItem;
-
-    }
-
-    public bool RemoveItem(InventoryItem inventoryItem) {
-        if(inventoryItem == null) {
-            return false;
-        }
-
+    public void AddItem(Item item, Vector2 position) {
         foreach(var slot in this.Slots) {
-            if(slot.InventoryItem == inventoryItem) {
-                //Debug.Log($"Entferne InventoryItem in {slot.Position} aus Inventar {this.Config.Name}");
-                slot.InventoryItem = null;
+            var pos = slot.Key;
+            this.Slots[pos] = item;
+        }
+        this.OnItemAdded(item, position);
+    }
+
+    public void RemoveItem(Item item) {
+        foreach(var slot in this.Slots) {
+            if(slot.Value == item) {
+                this.Slots[slot.Key] = null;
+            }
+            
+        }
+        this.OnItemRemoved(item);
+    }
+
+    public bool TryStackItem(Item inventoryItem, Item item) {
+        var maxAmount = inventoryItem.Config.Inventory.MaxStackSize;
+        var stacked = false;
+        for(int i = 0; i <= item.Amount; i++) {
+            if(inventoryItem.Amount >= maxAmount) {
+                break;
+            }
+            item.Amount--;
+            inventoryItem.Amount++;
+            stacked = true;
+        }
+        return stacked;
+    }
+
+    public bool IsSlotAreaEmpty(Vector2 startPos, Vector2 endPos) {
+        for(int y = (int)startPos.y; y <= endPos.y; y++) {
+            for(int x = (int)startPos.x; x <= endPos.x; x++) {
+                var pos = new Vector2(x, y);
+                var slotItem = this.Slots[pos];
+
+                if(slotItem == null) {
+
+                }
             }
         }
-        this.Weight -= inventoryItem.Weight;
-        this.ItemRemoved?.Invoke(inventoryItem);
+
         return true;
     }
 
-    public bool ItemExists(InventoryItem inventoryItem) {
-        foreach(var slot in this.Slots) {
-            if(slot.InventoryItem == inventoryItem) {
-                return true;
-            }
+    public bool IsItemTooLarge(Item item) {
+        var itemSlotCount = item.Config.Inventory.Size.x * item.Config.Inventory.Size.y;
+        var inventorySlotCount = this.Config.Size.x * this.Config.Size.y;
+
+        if(itemSlotCount > inventorySlotCount) {
+            return true;
         }
         return false;
     }
-    public List<InventorySlot> GetSlotArea(Vector2 startPos, Vector2 size) {
-        var endPos = startPos + size;
-        var list = this.Slots.FindAll(slot => 
-            slot.Position.x >= startPos.x 
-            && slot.Position.y >= startPos.y
-            && slot.Position.x < endPos.x
-            && slot.Position.y < endPos.y).ToList();
-        return list;
-    }
-    
-    public List<Vector2> GetItemSlotArea(InventoryItem inventoryItem) {
-        var list = new List<Vector2>();
-        foreach(var slot in this.Slots) {
-            if(slot.InventoryItem == inventoryItem) {
-                list.Add(slot.Position);
-            }
-        }
-        return list;
+
+    public void OnItemRemoved(Item item) {
+        this.ItemRemoved?.Invoke(item);
     }
 
+    public void OnItemAdded(Item item, Vector2 position) {
+        this.ItemAdded?.Invoke(item, position);
+    }
+
+    public void OnItemAddedTry(Item item, Vector2 position, bool success) {
+        this.ItemAddedTry?.Invoke(item, position, success);
+    }
 }
