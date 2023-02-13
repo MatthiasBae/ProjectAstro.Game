@@ -12,7 +12,8 @@ public class Actor : ActorBase {
     public List<ActorPart> Parts;
 
     public InventoryManager InventoryManager;
-
+    public EquipmentManager EquipmentManager;
+    
     public Animator Animator;
     public Rigidbody2D Rigidbody;
 
@@ -26,7 +27,8 @@ public class Actor : ActorBase {
     private void Start() {
         var actorTracker = new ChunkActorTracker();
         actorTracker.RegisterPlayer(this);
-        ChunkManager.Instance.RegisterActorTracker(actorTracker);
+        //ChunkManager.Instance.RegisterActorTracker(actorTracker);
+
     }
     private void Update() {
         this.Movement.Update();

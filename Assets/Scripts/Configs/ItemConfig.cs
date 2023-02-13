@@ -6,8 +6,19 @@ using UnityEngine;
 public class ItemConfig : ScriptableObject {
     public string Name;
     public float Weight;
+
+    public InventoryConfig InventoryConfig;
+    public Vector2 SlotSize;
+    public int MaxStackSize;
+    
     public Sprite SpriteUI;
     public Sprite Sprite;
-
-    public ItemInventoryConfig Inventory;
+    
+    public bool IsStackable {
+        get => this.MaxStackSize > 1;
+    }
+    public bool HasInventory {
+        get => this.InventoryConfig != null;
+    }
+    public bool IsEquipment;
 }

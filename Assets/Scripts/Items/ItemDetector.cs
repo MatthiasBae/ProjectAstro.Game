@@ -6,98 +6,114 @@ using UnityEngine;
 
 public class ItemDetector : MonoBehaviour {
     [SerializeField]
-    private GameObject ItemDropPrefab;
+    private GameObject DropItemPrefab;
+    public InventoryConfig InventoryConfig;
+    public ItemConfig CreateTestConfig;
+    public ItemConfig CreateInventoryItemConfig;
+    
+    
+    public ItemContainerBase Inventory;
+    private List<DropItem> ItemsFound;
     private List<Item> ItemsIgnored;
-    private List<ItemDrop> ItemsFound;
+    public event Action<DropItem> ItemFound;
+    public event Action<DropItem> ItemLost;
+    
+    
+    private void Awake(){
+        this.Initialize();
+    }
 
-    public Inventory Inventory;
-
-    public event Action<ItemDrop> ItemFound;
-    public event Action<ItemDrop> ItemLost;
-
-    private void Start() {
+    public void Start(){
         this.RegisterEvents();
     }
 
-    private void RegisterEvents() {
-        this.ItemFound += (itemDrop) => {
-            var item = itemDrop.Item;
-
-            this.Inventory.TryAddItem(item);
-        };
-
-        this.ItemLost += (itemDrop) => {
-            var item = itemDrop.Item;
-
-            this.Inventory.RemoveItem(item);
-        };
-
-        //@TODO: Wenn im Inventory das Item nicht mehr vorhanden ist, dann soll es auch aus der Welt entfernt werden
-        this.Inventory.ItemRemoved += (inventoryItem) => {
-            foreach(var itemDrop in this.ItemsFound) {
-                if(itemDrop.Item == inventoryItem) {
-                    GameObject.Destroy(itemDrop.gameObject);
-                    break;
-                }
-            }
-        };
-
-        this.Inventory.ItemAddedTry += (item, position, added) => {
-            if(!added) {
-                return;
-            }
-
-            if(this.ItemDropExists(item)) {
-                return;
-            }
-
-            this.AddItemDrop(item);
-        };
+    public void Update(){
+        if(Input.GetKeyDown(KeyCode.Mouse1)) {
+            var itemObj = DropItem.Create(this.DropItemPrefab, (Vector2)this.transform.position + new Vector2(4, 4), Item.Create(this.CreateTestConfig, 1));
+            var itemInventory = itemObj.Item.Inventory;
+            itemInventory.TryAddItem(Item.Create(this.CreateInventoryItemConfig, 1));
+        }
     }
+        
+    private void Initialize(){
+        this.ItemsFound = new List<DropItem>();
+        this.ItemsIgnored = new List<Item>();
+        this.Inventory = new Inventory(this.InventoryConfig);
+        
+    }
+    
+    public void RegisterEvents(){
+        this.ItemFound += this.TryAddItem;
+        this.ItemLost += this.TryRemoveItem;
+        
+        this.Inventory.ItemRemoved += this.DestroyDropItem;
+        this.Inventory.ItemAdded += this.TryCreateDropItem;
+    }
+    
+    public void TryAddItem(DropItem dropItem){
+        var item = dropItem.Item;
+        if(this.ItemsIgnored.Contains(item)){
+            return;
+        }
+        this.ItemsIgnored.Add(item);
+        
+        var added = this.Inventory.TryAddItem(item);
+        if(added){
+            
+        }
+    }
+    
+    public void TryRemoveItem(DropItem dropItem){
+        var item = dropItem.Item;
+ 
+        var removed = this.Inventory.TryRemoveItem(item);
+        if(removed){
+            this.ItemsIgnored.Remove(item);
+        }
+    }
+    
+    public void DestroyDropItem(Item item, Vector2 position){
+        if(!this.ItemsIgnored.Contains(item)){
+            return;
+        }
 
-    private bool ItemDropExists(Item item) {
-        foreach(var itemDrop in this.ItemsFound) {
-            if(itemDrop.Item == item) {
-                return true;
+        foreach (var dropItem in this.ItemsFound){
+            if(dropItem.Item == item){
+                this.ItemsFound.Remove(dropItem);
+                this.ItemsIgnored.Remove(dropItem.Item);
+                Destroy(dropItem.gameObject);
+                return;
             }
         }
-        return false;
     }
-
-    private void AddItemDrop(Item item) {
-        var dropItem = ItemDrop.Create(item, this.transform.position, this.ItemDropPrefab);
+    
+    public void TryCreateDropItem(Item item, Vector2 position){
+        if(this.ItemsIgnored.Contains(item)){
+            return;
+        }
+        var dropItem = DropItem.Create(this.DropItemPrefab, this.transform.position, item);
         this.ItemsFound.Add(dropItem);
         this.ItemsIgnored.Add(item);
     }
-
-    public void OnTriggerEnter2D(Collider2D collision) {
-        var itemDrop = collision.gameObject.GetComponent<ItemDrop>();
-
-        if(itemDrop == null) {
-            return;
+    
+    private void OnTriggerEnter2D(Collider2D other){
+        var dropItem = other.GetComponent<DropItem>();
+        if(dropItem != null){
+            if(!this.ItemsFound.Contains(dropItem)){
+                this.ItemsFound.Add(dropItem);
+                this.ItemFound?.Invoke(dropItem);
+            }
         }
-
-        var item = itemDrop.Item;
-        if(this.ItemsIgnored.Contains(item)) {
-            return;
-        }
-
-        this.ItemsFound.Add(itemDrop);
-        this.ItemFound?.Invoke(itemDrop);
     }
-
-    public void OnTriggerExit2D(Collider2D collision) {
-        var itemDrop = collision.gameObject.GetComponent<ItemDrop>();
-
-        if(itemDrop == null) {
-            return;
+    
+    private void OnTriggerExit2D(Collider2D other){
+        var dropItem = other.GetComponent<DropItem>();
+        if(dropItem != null){
+            if(this.ItemsFound.Contains(dropItem)){
+                this.ItemsFound.Remove(dropItem);
+                this.ItemLost?.Invoke(dropItem);
+            }
         }
-
-        var item = itemDrop.Item;
-
-        this.ItemsIgnored.Remove(item);
-        this.ItemsFound.Remove(itemDrop);
-
-        this.ItemLost?.Invoke(itemDrop);
     }
+    
 }

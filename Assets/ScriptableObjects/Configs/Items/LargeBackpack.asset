@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c86d8da1f053324d91b5d6d12b209c3, type: 3}
+  m_Name: LargeBackpack
+  m_EditorClassIdentifier: 
+  Name: SmallBackpack
+  Weight: 0.4
+  InventoryConfig: {fileID: 11400000, guid: 577822ce20317c84190a7bba8aa85cec, type: 2}
+  SlotSize: {x: 2, y: 3}
+  MaxStackSize: 1
+  SpriteUI: {fileID: 21300000, guid: c1419325189c9e3468555e6b11f2a376, type: 3}
+  Sprite: {fileID: 21300000, guid: c1419325189c9e3468555e6b11f2a376, type: 3}
+  IsEquipment: 1

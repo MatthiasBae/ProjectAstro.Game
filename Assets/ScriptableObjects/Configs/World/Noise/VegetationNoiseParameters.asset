@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: VegetationNoiseParameters
   m_EditorClassIdentifier: 
   Name: Vegetation
-  Seed: 87632
+  Seed: 5621
   Scale: 165
   Octaves: 8
   Persistance: 0.4
