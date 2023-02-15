@@ -11,13 +11,11 @@ public class ItemDetector : MonoBehaviour {
     public ItemConfig CreateTestConfig;
     public ItemConfig CreateInventoryItemConfig;
     
-    
     public ItemContainerBase Inventory;
     private List<DropItem> ItemsFound;
     private List<Item> ItemsIgnored;
     public event Action<DropItem> ItemFound;
     public event Action<DropItem> ItemLost;
-    
     
     private void Awake(){
         this.Initialize();

@@ -31,7 +31,7 @@ public class InventoryItemUI : MonoBehaviour {
 	public void SetItem(Item item, Vector2 gridSlotSize){
 		this.Item = item;
 		this.UpdateVisuals();
-		this.SetSize(gridSlotSize, this.Item.Config.SlotSize);
+		this.SetSize(gridSlotSize, this.Item.Config.Slots);
 	}
 
 	private void UpdateVisuals(){

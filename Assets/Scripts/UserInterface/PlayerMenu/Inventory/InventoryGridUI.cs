@@ -31,8 +31,8 @@ public class InventoryGridUI : ItemContainerUIBase {
     
     public override void AddItem(InventoryItemUI inventoryItemUI, Vector2 slotPosition){
         var endPosition = new Vector2{
-            x = slotPosition.x + inventoryItemUI.Item.Config.SlotSize.x,
-            y = slotPosition.y - inventoryItemUI.Item.Config.SlotSize.y
+            x = slotPosition.x + inventoryItemUI.Item.Config.Slots.x,
+            y = slotPosition.y - inventoryItemUI.Item.Config.Slots.y
         };
         //Debug.Log(endPosition);
         for (var x = slotPosition.x; x < endPosition.x; x++){

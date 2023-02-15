@@ -15,7 +15,9 @@ public abstract class ItemContainerUIBase : MonoBehaviour, IPointerClickHandler 
 	public event Action<InventoryItemUI> ItemSelected;
 
 	public Dictionary<Vector2, InventoryItemUI> Slots;
-	public Vector2 SlotSize;
+	public Vector2 SlotSize {
+		get => InventoryUIController.Instance.PixelPerSlot;
+	}
 	
 	
 	public abstract void PlaceItem(InventoryItemUI inventoryItemUI);

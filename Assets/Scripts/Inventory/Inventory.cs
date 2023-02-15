@@ -19,8 +19,8 @@ public class Inventory : ItemContainerBase {
     
     public override void AddItem(Item item, Vector2 slotPosition) {
         var endPosition = new Vector2{
-            x = slotPosition.x + item.Config.SlotSize.x,
-            y = slotPosition.y - item.Config.SlotSize.y
+            x = slotPosition.x + item.Config.Slots.x,
+            y = slotPosition.y - item.Config.Slots.y
         };
         //Debug.Log(endPosition);
         for (var x = slotPosition.x; x < endPosition.x; x++){

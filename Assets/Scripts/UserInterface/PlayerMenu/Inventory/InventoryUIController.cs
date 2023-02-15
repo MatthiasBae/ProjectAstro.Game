@@ -15,7 +15,9 @@ public class InventoryUIController : MonoBehaviour {
 			return _instance;
 		}
 	}
-	
+
+	public Vector2 PixelPerSlot;
+
 	public InventoryItemUI SelectedInventoryItemUI;
 	public GameObject SelectedInventoryItemUIContainer;
 	

@@ -10,9 +10,10 @@ public class InventoryUI : MonoBehaviour {
     private ItemContainerUIBase GridUI;
     
     public ItemContainerBase Inventory;
-    
-    [SerializeField]
-    private Vector2 GridSlotSize;
+
+    private Vector2 GridSlotSize{
+        get => InventoryUIController.Instance.PixelPerSlot;
+    }
     [SerializeField]
     private GameObject InventoryItemPrefab;
     [SerializeField] 

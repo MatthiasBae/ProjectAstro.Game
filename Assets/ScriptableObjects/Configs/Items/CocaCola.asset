@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Coca Cola
   Weight: 0.4
+  Category: 6
+  Description: 
   InventoryConfig: {fileID: 11400000, guid: 48c75407a3f2d2440980115c021ca3e0, type: 2}
-  SlotSize: {x: 2, y: 2}
+  Slots: {x: 0, y: 0}
   MaxStackSize: 1
   SpriteUI: {fileID: 21300000, guid: b47ca9e5315db2b4fa5d09ccced2fc87, type: 3}
   Sprite: {fileID: 21300000, guid: b47ca9e5315db2b4fa5d09ccced2fc87, type: 3}
-  IsEquipment: 0

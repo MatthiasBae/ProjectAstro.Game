@@ -81,8 +81,8 @@ public abstract class ItemContainerBase {
 		//Calculate the endposition if the y axis on the grid is negative
 
 		var endPosition = new Vector2{
-			x = (item.Config.SlotSize.x + position.x),
-			y = -(item.Config.SlotSize.y - position.y)
+			x = (item.Config.Slots.x + position.x),
+			y = -(item.Config.Slots.y - position.y)
 		};
         
 		if(endPosition.x > this.Config.Size.x || endPosition.y < -this.Config.Size.y) {
@@ -117,14 +117,14 @@ public abstract class ItemContainerBase {
 	}
 
 	public bool IsItemTooLarge(Item item) {
-		var itemSlotCount = item.Config.SlotSize.x * item.Config.SlotSize.y;
+		var itemSlotCount = item.Config.Slots.x * item.Config.Slots.y;
 		var inventorySlotCount = this.Config.Size.x * this.Config.Size.y;
 
 		if(itemSlotCount > inventorySlotCount) {
 			return true;
 		}
         
-		if(item.Config.SlotSize.x > this.Config.Size.x || item.Config.SlotSize.y > this.Config.Size.y) {
+		if(item.Config.Slots.x > this.Config.Size.x || item.Config.Slots.y > this.Config.Size.y) {
 			return true;
 		}
         
