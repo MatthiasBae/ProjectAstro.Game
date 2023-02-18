@@ -7,24 +7,28 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
 
-[Serializable]
-public class MapGenerator {
+public class MapGenerator : MonoBehaviour {
+    public static MapGenerator Instance;
+    
     public List<BiomeConfig> BiomeConfigs;
     public List<NoiseConfig> NoiseConfigs;
     public List<TerrainLayer> TerrainLayers;
     
+    [NonSerialized]
+    private NoiseChunkStore NoiseChunkStore;
     //public NoiseStore NoiseStore;
-    public NoiseChunkStore NoiseChunkStore;
-    //public NoiseStore NoiseStore;
-
-    public int GlobalSeed = 1;
-    public int GlobalScale;
-
-    public void Start() {
-        this.NoiseChunkStore = new NoiseChunkStore();
+    
+    [SerializeField]
+    private int GlobalSeed = 1;
+    [SerializeField]
+    private int GlobalScale;
+    
+    public void Awake() {
+        Instance = this;
+        Instance.NoiseChunkStore = new NoiseChunkStore();
     }
 
-    public void CreateNoise(Chunk chunk){
+    public void CreateNoise(ChunkBase chunk){
         foreach (var noiseConfig in this.NoiseConfigs){
             var seed = noiseConfig.Seed == 0 ? this.GlobalSeed : noiseConfig.Seed;
             var scale = noiseConfig.Scale == 0 ? this.GlobalScale : noiseConfig.Scale;
@@ -33,14 +37,14 @@ public class MapGenerator {
             var chunkSize = ChunkManager.Instance.ChunkSize;
             var noiseLocalSector = NoiseHelper.ChunkLocalSectorToNoiseLocalSector(chunk.LocalSector, chunkCount);
             
-            Debug.Log($"Chunk Sektor: {chunk.LocalSector} || Noise Sektor: {noiseLocalSector}");
+            //Debug.Log($"Chunk Sektor: {chunk.LocalSector} || Noise Sektor: {noiseLocalSector}");
             var noise = Noise.Create(noiseConfig, seed, scale,  (int)chunk.Size.x, (int)chunk.Size.x, chunk.Sector * chunkSize);
             noise.Sector = chunk.Sector;
             this.NoiseChunkStore.AddNoiseChunk(noiseConfig.Name, chunk.Sector, noise);
         }
     }
     
-    public void RemoveNoise(Chunk chunk) {
+    public void RemoveNoise(ChunkBase chunk) {
         this.NoiseChunkStore.RemoveNoiseChunk("Temperature", chunk.Sector);
         this.NoiseChunkStore.RemoveNoiseChunk("Humidity", chunk.Sector);
         this.NoiseChunkStore.RemoveNoiseChunk("Vegetation", chunk.Sector);
@@ -73,24 +77,7 @@ public class MapGenerator {
         }
         return this.GetBiomeConfig(closestBiome);
     }
-    public BiomeConfig GetBiomeConfigAtPosition(string layer, Vector2 chunkSector, Vector2Int chunkField) {
-        var layerNoiseChunk = this.NoiseChunkStore.GetNoiseChunk(layer, chunkSector);
-        var layerNoiseValue = layerNoiseChunk.Map[chunkField.x, chunkField.y];
-
-        var closestBiome = "";
-        var closestDistance = float.MaxValue;
-
-        foreach(var biomeConfig in this.BiomeConfigs) {
-            var layerNoiseDistance = (layerNoiseValue - biomeConfig.Vegetation) * (layerNoiseValue - biomeConfig.Vegetation) * layerNoiseChunk.Config.WeightFactor;
-
-            var overallDistance = Mathf.Sqrt(layerNoiseDistance );//+ humidityDistance + vegetationDistance);
-            if (overallDistance < closestDistance) {
-                closestDistance = overallDistance;
-                closestBiome = biomeConfig.Name;
-            }
-        }
-        return this.GetBiomeConfig(closestBiome);
-    }
+ 
     public BiomeConfig GetBiomeConfig(string name) {
         foreach(var biomeConfig in this.BiomeConfigs) {
             if(biomeConfig.Name == name) {
@@ -99,15 +86,6 @@ public class MapGenerator {
         }
         return null;
     }
-
-    public void GetChunkTerrainData(Chunk chunk){
-        foreach (var chunkField in chunk.Fields){
-
-            var fieldTerrain = this.GetFieldTerrain(chunk.Sector, chunkField.PositionInChunk);
-            chunkField.FieldController = new FieldController(fieldTerrain);
-        }
-    }
-    
     public FieldTerrain GetFieldTerrain(Vector2 chunkSector, Vector2Int chunkField) {
         var biomeConfig = this.GetBiomeConfigAtPosition(chunkSector, chunkField);
         
@@ -116,7 +94,7 @@ public class MapGenerator {
         };
         return fieldTerrain;
     }
-
+    
     public TerrainLayer GetTerrainLayer(string layerName){
         foreach (var layer in this.TerrainLayers){
             if(layer.Name == layerName){

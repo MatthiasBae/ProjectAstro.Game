@@ -2100,7 +2100,7 @@ GameObject:
   - component: {fileID: 563670263}
   - component: {fileID: 563670264}
   m_Layer: 0
-  m_Name: TimeManager
+  m_Name: TimeController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3108,15 +3108,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1046523699}
-  - component: {fileID: 1046523701}
-  - component: {fileID: 1046523700}
+  - component: {fileID: 1046523702}
   m_Layer: 0
   m_Name: World
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1046523699
 Transform:
   m_ObjectHideFlags: 0
@@ -3129,13 +3128,15 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1338786926}
   - {fileID: 563670263}
+  - {fileID: 2113826841}
+  - {fileID: 1132014314}
+  - {fileID: 1338786926}
   - {fileID: 152651701}
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1046523700
+--- !u!114 &1046523702
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3144,46 +3145,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1046523698}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2538764fcf429bc428d1628d7296a3c4, type: 3}
+  m_Script: {fileID: 11500000, guid: 841f6ac8e18e111429989459ef8c1c02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ChunkSize: {x: 16, y: 16}
-  ChunkCount: {x: 16, y: 16}
-  ChunkRowsRenderState: 4
-  ChunkRowsPrepareState: 6
-  ChunkRowsCreateState: 8
-  ChunkDuration: 30
-  ActorTracker:
-    Player: {fileID: 0}
-    Sector: {x: 0, y: 0}
-    SwitchedChunk: 0
---- !u!114 &1046523701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1046523698}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e4cc98a19ccead0409413976ab35f639, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MapGenerator:
-    BiomeConfigs:
-    - {fileID: 11400000, guid: 19c38e5a99fcbf64f9a83deb6ab49cc0, type: 2}
-    - {fileID: 11400000, guid: 1276113a208dec14cad04490ec8bd28f, type: 2}
-    - {fileID: 11400000, guid: 17d31aabbe125c54b82a85c167884b4c, type: 2}
-    NoiseConfigs:
-    - {fileID: 11400000, guid: 74faff7f9dda48a489b9dafb158a8cd2, type: 2}
-    - {fileID: 11400000, guid: b6c12e363fd20ce448695fd81c51740e, type: 2}
-    - {fileID: 11400000, guid: ee794fba8293bf04a95a86d3f5804809, type: 2}
-    TerrainLayers:
-    - Name: Ground
-      Tilemap: {fileID: 1267799509}
-    GlobalSeed: 5642
-    GlobalScale: 500
-  ChunkManager: {fileID: 1046523700}
+  MapGenerator: {fileID: 1132014313}
+  ChunkManager: {fileID: 2113826839}
 --- !u!1 &1057425695
 GameObject:
   m_ObjectHideFlags: 0
@@ -3850,6 +3816,62 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RectTransform: {fileID: 1127214222}
+--- !u!1 &1132014312
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1132014314}
+  - component: {fileID: 1132014313}
+  m_Layer: 0
+  m_Name: MapController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1132014313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1132014312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 765dd9b9b6b94ba4782901c93660dd10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BiomeConfigs:
+  - {fileID: 11400000, guid: 19c38e5a99fcbf64f9a83deb6ab49cc0, type: 2}
+  - {fileID: 11400000, guid: 1276113a208dec14cad04490ec8bd28f, type: 2}
+  NoiseConfigs:
+  - {fileID: 11400000, guid: b6c12e363fd20ce448695fd81c51740e, type: 2}
+  - {fileID: 11400000, guid: 74faff7f9dda48a489b9dafb158a8cd2, type: 2}
+  - {fileID: 11400000, guid: ee794fba8293bf04a95a86d3f5804809, type: 2}
+  TerrainLayers:
+  - Name: Ground
+    Tilemap: {fileID: 1267799509}
+  GlobalSeed: 546462
+  GlobalScale: 500
+--- !u!4 &1132014314
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1132014312}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1046523699}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1137218625
 GameObject:
   m_ObjectHideFlags: 0
@@ -6385,6 +6407,60 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 13c85442218757849a1513d691c6cc7d, type: 3}
+--- !u!1 &2113826838
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2113826841}
+  - component: {fileID: 2113826839}
+  m_Layer: 0
+  m_Name: ChunkController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2113826839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2113826838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efb411d682c5f594986fb2ba472e58ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ChunkSize: {x: 16, y: 16}
+  ChunkCount: {x: 16, y: 16}
+  ChunkRowsRenderState: 4
+  ChunkRowsPrepareState: 6
+  ChunkRowsCreateState: 8
+  ChunkDuration: 10
+  ActorTracker:
+    Player: {fileID: 191670394}
+    Sector: {x: 0, y: 0}
+    SwitchedChunk: 0
+--- !u!4 &2113826841
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2113826838}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1046523699}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &258359832063252330
 GameObject:
   m_ObjectHideFlags: 0

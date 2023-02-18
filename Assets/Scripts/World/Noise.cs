@@ -24,7 +24,7 @@ public class Noise {
     }
 
     public static float[,] Generate(int seed, int width, int height, float scale, int octaves, float persistance, float lacunarity, Vector2 offset) {
-        Debug.Log($"NoiseOffset: {offset}");
+        //Debug.Log($"NoiseOffset: {offset}");
         float[,] noiseMap = new float[width, height];
         System.Random rng = new System.Random(seed);
         Vector2[] octaveOffsets = new Vector2[octaves];
@@ -89,26 +89,6 @@ public class Noise {
         for(int y = 0; y < height; y++) {
             for(int x = 0; x < width; x++) {
                 colors[y * width + x] = Color.Lerp(Color.black, Color.white, Map[x, y]);
-            }
-        }
-        texture.SetPixels(colors);
-        texture.Apply();
-        return texture;
-    }
-
-    public Texture2D ToPreview(string layer = ""){
-        int width = Map.GetLength(0);
-        int height = Map.GetLength(1);
-        Texture2D texture = new Texture2D(width, height);
-        Color[] colors = new Color[width * height];
-        for(int y = 0; y < height; y++) {
-            for(int x = 0; x < width; x++) {
-                if (layer != ""){
-                    colors[y * width + x] = WorldGenerator.Instance.MapGenerator.GetBiomeConfigAtPosition(layer, this.Sector, new Vector2Int(x, y)).MapColor;
-                }
-                else{
-                    colors[y * width + x] = WorldGenerator.Instance.MapGenerator.GetBiomeConfigAtPosition(this.Sector, new Vector2Int(x, y)).MapColor;
-                }
             }
         }
         texture.SetPixels(colors);

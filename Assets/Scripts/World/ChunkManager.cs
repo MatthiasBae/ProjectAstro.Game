@@ -2,6 +2,7 @@ using JetBrains.Annotations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
@@ -28,17 +29,12 @@ public class ChunkManager : MonoBehaviour {
     public ChunkStore Store;
     
     public event Action PlayerSwitchedChunk;
-    public event Action<Chunk> ChunkAdded;
-    public event Action<Chunk> ChunkRemoved;
+    public event Action<ChunkBase> ChunkAdded;
+    public event Action<ChunkBase> ChunkRemoved;
 
     private void Awake() {
-        if(Instance == null) {
-            Instance = this;
-            Instance.Initialize();
-        }
-        else {
-            Destroy(this);
-        }
+        Instance = this;
+        Instance.Initialize();
     }
 
     public void Initialize() {
@@ -53,7 +49,7 @@ public class ChunkManager : MonoBehaviour {
         this.CreateChunks();
     }
     public void CreateChunks() {
-        var chunksToAdd = new Dictionary<Vector2, Chunk>();
+        var chunksToAdd = new Dictionary<Vector2, ChunkBase>();
         var playerSector = this.ActorTracker.Sector;
         
         for(int y = -(int)this.ChunkCount.y / 2; y < (int)this.ChunkCount.y / 2; y++) {
@@ -65,7 +61,8 @@ public class ChunkManager : MonoBehaviour {
                     continue;
                 }
                 //Debug.Log("Creating chunk " + chunkSector + "");
-                var chunk = Chunk.Create(this.ChunkSize, chunkSector, this.ChunkDuration);
+                var chunk = ChunkBase.Create(this.ActorTracker, this.ChunkSize, chunkSector, this.ChunkDuration, ChunkEvolutionBase.States.Empty);
+                
                 chunksToAdd.Add(chunkSector, chunk);
                 
             }
@@ -74,18 +71,74 @@ public class ChunkManager : MonoBehaviour {
         foreach(var chunk in chunksToAdd) {
             this.Store.Add(chunk.Key, chunk.Value);
             this.ChunkAdded?.Invoke(chunk.Value);
+            chunk.Value.Evolution.Start();
         }
     }
 
     public void UpdateChunks(){
         foreach (var chunk in this.Store.Chunks.Values) {
+            this.CheckSwitchChunkState(chunk);
             chunk.Update();
-            //Debug.Log($"Chunk {chunk.Sector} is in state {chunk.State}");
-            chunk.RenderChunkInEditor(chunk.State.LineColor);
+            
+            //Debug.Log($"Chunk {chunk.Sector} is in state {chunk.Evolution.State}");
+            chunk.RenderChunkInEditor(chunk.LineColor);
             
         }
     }
-    
+        
+    public void CheckSwitchChunkState(ChunkBase chunk) {
+        var isInRange = chunk.IsInRange;
+        var isReady = chunk.Evolution.IsReady;
+        var chunkState = chunk.Evolution.State;
+        var timerFinished = chunk.TimerFinished;
+        
+        var chunksToRender = ChunkManager.Instance.ChunkRowsRenderState;
+        var chunksToPrepare = ChunkManager.Instance.ChunkRowsPrepareState;
+        var chunksToCreate = ChunkManager.Instance.ChunkRowsCreateState;
+        var isInRenderDistance = ChunkHelper.ChunkIsInRange(chunk.Sector, chunk.ActorTracker.Sector, chunksToRender);
+        var isInPrepareDistance = ChunkHelper.ChunkIsInRange(chunk.Sector, chunk.ActorTracker.Sector, chunksToPrepare);
+        var isInCreateDistance = ChunkHelper.ChunkIsInRange(chunk.Sector, chunk.ActorTracker.Sector, chunksToCreate);
+        
+        if (!isReady){
+            Debug.Log("Chunk is not ready");
+            return;
+        }
+        
+        if (isInRange){
+            chunk.ResetTimer();
+        }
+        
+        if(chunkState == ChunkEvolutionBase.States.Empty && isInCreateDistance){
+            var evolution = new ChunkEvolutionCreated(chunk);
+            chunk.Evolution.SwitchEvolutionState(chunk, evolution);
+        }
+        
+        if(chunkState == ChunkEvolutionBase.States.Create && isInPrepareDistance){
+            var evolution = new ChunkEvolutionPrepared(chunk);
+            chunk.Evolution.SwitchEvolutionState(chunk, evolution);
+        }
+        
+        if (chunkState == ChunkEvolutionBase.States.Prepare && isInRenderDistance){
+            var evolution = new ChunkEvolutionRendered(chunk);
+            chunk.Evolution.SwitchEvolutionState(chunk, evolution);
+        }
+        
+        if (chunkState == ChunkEvolutionBase.States.Render && !isInRenderDistance && timerFinished){
+            var evolution = new ChunkEvolutionPrepared(chunk);
+            chunk.Evolution.SwitchEvolutionState(chunk, evolution, true);
+        }
+        
+        if (chunkState == ChunkEvolutionBase.States.Prepare && !isInPrepareDistance && timerFinished){
+            var evolution = new ChunkEvolutionCreated(chunk);
+            chunk.Evolution.SwitchEvolutionState(chunk, evolution, true);
+        }
+        
+        if (chunkState == ChunkEvolutionBase.States.Create && !isInCreateDistance && timerFinished){
+            var evolution = new ChunkEvolutionEmpty(chunk);
+            chunk.Evolution.SwitchEvolutionState(chunk, evolution, true);
+        }
+    }
+ 
     public void UpdateActorTrackers() {
         this.ActorTracker.UpdatePlayerSector();
         if(this.ActorTracker.SwitchedChunk) {
@@ -94,38 +147,12 @@ public class ChunkManager : MonoBehaviour {
         }
     }
 
-    public bool TryRemoveChunk(Chunk chunk) {
-        if(this.Store.Chunks.ContainsKey(chunk.Sector)) {
-            this.Store.Remove(chunk.Sector);
-            return true;
-        }
-        return false;
-    }
-    
     public void RemoveChunks() {
-        var chunksToRemove = new List<Chunk>();
-        foreach(var chunk in this.Store.Chunks.Values) {
-            var isInRange = chunk.IsInRange(this.ActorTracker);
-            
-            
-            if(isInRange) {
-                chunk.ResetTimer();
-            }
-            else {
-                chunk.UpdateTimer();
-                if(chunk.TimerFinished && chunk.State.IsRemovable) {
-                    Debug.Log("Timer finished");
-                    chunksToRemove.Add(chunk);
-                    this.ChunkRemoved?.Invoke(chunk);
-                }
+        var chunks = this.Store.Chunks.Values.ToArray();
+        foreach(var chunk in chunks) {
+            if(chunk.IsRemovable) {
+                this.Store.Chunks.Remove(chunk.Sector);
             }
         }
-
-        foreach(var chunk in chunksToRemove) {
-            this.Store.Remove(chunk.Sector);
-        }
-    }
-    public void RegisterActorTracker(ChunkActorTracker tracker) {
-        this.ActorTracker = tracker;
     }
 }

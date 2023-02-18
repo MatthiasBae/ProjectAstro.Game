@@ -20,8 +20,6 @@ public class WorldGenerator : MonoBehaviour  {
     }
 
     public void Start() {
-        this.MapGenerator.Start();
-        
         this.RegisterEvents();
         this.ChunkManager.CreateChunks();
     }
@@ -33,10 +31,7 @@ public class WorldGenerator : MonoBehaviour  {
     }
     private void Update() {
         this.ChunkManager.UpdateActorTrackers();
-        this.ChunkManager.CheckChunkCreation();
-        
         this.ChunkManager.UpdateChunks();
-        
-        
+        this.ChunkManager.CheckChunkCreation();
     }
 }

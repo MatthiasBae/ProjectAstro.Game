@@ -20,18 +20,10 @@ public class Actor : ActorBase {
     private void Awake() {
         this.Movement = new ActorMovementPlayer(this);
         this.Metabolism.Initialize(this);
-        
 
     }
 
-    private void Start() {
-        var actorTracker = new ChunkActorTracker();
-        actorTracker.RegisterPlayer(this);
-        //ChunkManager.Instance.RegisterActorTracker(actorTracker);
-
-    }
     private void Update() {
         this.Movement.Update();
-        
     }
 }

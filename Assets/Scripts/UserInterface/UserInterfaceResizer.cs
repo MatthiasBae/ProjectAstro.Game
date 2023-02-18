@@ -12,7 +12,7 @@ public class UserInterfaceResizer : MonoBehaviour {
 	}
 
 	public void OnPixelRatioChanged(ScreenData screenData){
-		Debug.Log("OnPixelRatioChanged");
+		//Debug.Log("OnPixelRatioChanged");
 		var scaleFactor = screenData.PixelRatio / this.BaseScale;
 		this.CanvasScaler.scaleFactor = scaleFactor;
 	}

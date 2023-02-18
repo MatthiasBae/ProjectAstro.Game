@@ -7,9 +7,10 @@ public class EnvironmentInventoryContainerUI : MonoBehaviour {
 	
 	private void Start(){
 		this.InventoryUI.InitializeInventory(this.ItemDetector.Inventory);
+		this.RegisterEvents();
 	}
 
 	private void RegisterEvents(){
-		//this.ItemDetector.ItemFound += this.InventoryUI.TryAddItem;
+		//this.ItemDetector.ItemFound += this.InventoryUI.Tr;
 	}
 }

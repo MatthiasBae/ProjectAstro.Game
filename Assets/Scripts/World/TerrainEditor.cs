@@ -9,4 +9,8 @@ public class TerrainEditor {
 		tilemap.SetTile(vec3Position, tile);
 	}
 	
+	public static void RemoveTile(Tilemap tilemap, Vector2 position) {
+		var vec3Position = Vector3Int.RoundToInt(position);
+		tilemap.SetTile(vec3Position, null);
+	}
 }
